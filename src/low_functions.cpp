@@ -51,9 +51,17 @@ unsigned long ZwWriteVirtualMemory(
 	PVOID	BaseAddress,
 	PVOID	Buffer,
 	ULONG	BufferSize,
-	PULONG	NumberOfBytesWritten
+	PULONG	NumberOfBytesWritten,
+	bool safe
 	) {
-	return pZwWriteVirtualMemory(ProcessHandle, BaseAddress, Buffer, BufferSize, NumberOfBytesWritten);
+    
+    unsigned long oldProtect;
+    
+    if (safe == true) VirtualProtectEx(ProcessHandle, BaseAddress, BufferSize, PAGE_READWRITE, &oldProtect);
+        unsigned long ret = pZwWriteVirtualMemory(ProcessHandle, BaseAddress, Buffer, BufferSize, NumberOfBytesWritten);
+    if (safe == true) VirtualProtectEx(ProcessHandle, BaseAddress, BufferSize, PAGE_READWRITE, &oldProtect);
+    
+    return ret;
 }
 unsigned long ZwOpenProcess(
 	PHANDLE				ProcessHandle,
@@ -85,7 +93,7 @@ void init_low_functions() {
 	HMODULE ntdll = GetModuleHandleA("ntdll.dll");
     
    	pMOD_GetProcAddress			= (TMOD_GetProcAddress)GetProcAddress(GetModuleHandleA("Kernel32.dll"), "GetProcAddress");
-	pZwOpenProcess              = (TZwOpenProcess)MOD_GetProcAddress(ntdll, "ZwOpenProcess");
-    pZwReadVirtualMemory        = (TZwReadVirtualMemory)MOD_GetProcAddress(ntdll, "ZwReadVirtualMemory");
-    pZwWriteVirtualMemory       = (TZwWriteVirtualMemory)MOD_GetProcAddress(ntdll, "ZwWriteVirtualMemory");
+	pZwOpenProcess              = (TZwOpenProcess)GetProcAddress(ntdll, "ZwOpenProcess");
+    pZwReadVirtualMemory        = (TZwReadVirtualMemory)GetProcAddress(ntdll, "ZwReadVirtualMemory");
+    pZwWriteVirtualMemory       = (TZwWriteVirtualMemory)GetProcAddress(ntdll, "ZwWriteVirtualMemory");
 }

@@ -20,7 +20,8 @@ unsigned long ZwWriteVirtualMemory(
 	PVOID	BaseAddress,
 	PVOID	Buffer,
 	ULONG	BufferSize,
-	PULONG	NumberOfBytesWritten
+	PULONG	NumberOfBytesWritten,
+    bool safe = false
 );
 
 
