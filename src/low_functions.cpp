@@ -1,5 +1,5 @@
-#include "losu.h"
-#include "lowlvl.h"
+#include "h/losu.h"
+#include "h/lowlvl.h"
 
 // {{{ ----- low lvl opening
     // {{{ ----- typedefs
@@ -55,7 +55,7 @@ unsigned long ZwWriteVirtualMemory(
 	bool safe
 	) {
     
-    unsigned long oldProtect;
+    DWORD oldProtect;
     
     if (safe == true) VirtualProtectEx(ProcessHandle, BaseAddress, BufferSize, PAGE_READWRITE, &oldProtect);
         unsigned long ret = pZwWriteVirtualMemory(ProcessHandle, BaseAddress, Buffer, BufferSize, NumberOfBytesWritten);
@@ -93,7 +93,7 @@ void init_low_functions() {
 	HMODULE ntdll = GetModuleHandleA("ntdll.dll");
     
    	pMOD_GetProcAddress			= (TMOD_GetProcAddress)GetProcAddress(GetModuleHandleA("Kernel32.dll"), "GetProcAddress");
-	pZwOpenProcess              = (TZwOpenProcess)GetProcAddress(ntdll, "ZwOpenProcess");
-    pZwReadVirtualMemory        = (TZwReadVirtualMemory)GetProcAddress(ntdll, "ZwReadVirtualMemory");
-    pZwWriteVirtualMemory       = (TZwWriteVirtualMemory)GetProcAddress(ntdll, "ZwWriteVirtualMemory");
+	pZwOpenProcess              = (TZwOpenProcess)MOD_GetProcAddress(ntdll, "ZwOpenProcess");
+    pZwReadVirtualMemory        = (TZwReadVirtualMemory)MOD_GetProcAddress(ntdll, "ZwReadVirtualMemory");
+    pZwWriteVirtualMemory       = (TZwWriteVirtualMemory)MOD_GetProcAddress(ntdll, "ZwWriteVirtualMemory");
 }
