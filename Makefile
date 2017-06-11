@@ -19,7 +19,7 @@ LIBS=-lm -lpsapi -lcomctl32
 SRCDIR                = .
 SUBDIRS               =
 DLLS                  =
-EXES                  = floral_flyff_cheat.exe
+EXES                  = floral_flyff_cheat.exee
 DLL_PATH              = -L../wine/dlls -L../wine/libs/wine
 
 ### floral_flyff_cheat.exe sources and settings
@@ -29,7 +29,8 @@ C_SRCS=
 CXX_SRCS= $(SDIR)/low_functions.cpp \
 	$(SDIR)/main.cpp \
 	$(SDIR)/search.cpp \
-	$(SDIR)/gToolTip.cpp
+	$(SDIR)/gToolTip.cpp \
+	$(SDIR)/flyff.cpp
 	
 RC_SRCS=$(RDIR)/dlg_main.rc
 

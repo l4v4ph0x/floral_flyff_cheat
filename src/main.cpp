@@ -3,14 +3,13 @@
 #include "h/losu.h"
 #include "h/summoner.h"
 #include "h/gToolTip.h"
+#include "h/flyff.h"
 #include "res/resource.h"
 
-void *handle;
-unsigned long base;
+// controller vars
+flyff f;
 
-unsigned long nr_range_addr;
-bool bo_set_range = false;
-
+// flyff and this window info
 HINSTANCE HIthis;
 char windowName[] = "Floral Flyff";
 
@@ -23,35 +22,30 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                     char txt_range[256];
                     float nr_range;
                     
+                    // get control
                     hwnd = GetDlgItem(hDlg, IDC_EDIT_RANGE);
+                    // get control text, in this case edittext
                     GetWindowTextA(hwnd, txt_range, sizeof(txt_range) / sizeof(txt_range[0]));
                     
-                    if (bo_set_range == false) {
-                        // enabling range for everyone
-                        ZwWriteVirtualMemory(handle, (void *)(base + 0x2A654A), (void *)"\x90\x90", 2, 0, true);
-                        
-                        // force to use set range
-                        ZwWriteVirtualMemory(handle, (void *)(base + 0x2A6161), (void *)"\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90", 12, 0, true);
-                        ZwWriteVirtualMemory(handle, (void *)(base + 0x2A616D + 2), &nr_range_addr, 4, 0, true);
-                        
-                        bo_set_range = true;
-                    }
-                    
+                    // convert it to float and then print it out
                     nr_range = atof(txt_range);
                     sprintf(txt_range, "%f\n", nr_range);
                     printf(txt_range);
                     
-                    // set range number
-                    ZwWriteVirtualMemory(handle, (void *)(nr_range_addr), &nr_range, 4, 0);
+                    // set range and change edittext value of converted val
+                    f.set_range(nr_range);
                     SetWindowText(hwnd, txt_range);
                     
                     return true;
+                case ID_SELECT_TARGET:
+                    flyff::targetInfo ti;
+                    
+                    ti = f.getClosestTargetInView();
+                    printf("%08X\n", ti.base);
+                    if (ti.base != 0) {
+                        f.select(ti.base);
+                    }
             }
-            break;
-        case WM_CHAR:
-            printf("test");
-            if ((wParam >= '0' && wParam <= '9') || wParam == '.' || wParam == VK_RETURN || wParam == VK_DELETE || wParam == VK_BACK)
-                return 0;
             break;
         case WM_CLOSE:
             DestroyWindow(hDlg);
@@ -65,36 +59,49 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 
 int main() {
+    void *handle;
+    unsigned int pid;
+    unsigned long base;
+    unsigned long base_size;
     HWND hthis;
     HWND hwnd;
-    unsigned int pid;
+    
+    HWND hDlg;
+    BOOL ret;
+    MSG msg;
+    
+    char buf_msg[64];
     
     init_low_functions();
-    hthis = GetConsoleWindow();
     
+    // get current window vars
+    hthis = GetConsoleWindow();
     HIthis = (HINSTANCE)GetWindowLong(hthis, -6);
     
     hwnd = FindWindowA(0, windowName);
     if (hwnd) {
+        // get privs to mod proc
         GetWindowThreadProcessId(hwnd, &pid);
         handle = VZwOpenProcess(pid);
         
         if (handle) {
             // set variables
-            base = 0x00400000; //get_module(pid, "Neuz.exe"); // get_module does not work on wine staging 2.9
-            nr_range_addr = base + 0x005E56F8;
+            base = 0x00400000; //get_module(pid, "Neuz.exe", &base_size); // get_module does not work on wine staging 2.9
+            base_size = 0x00917000; // this and base from immunity debugger
             
-            HWND hDlg;
+            // loading flyff class
+            f = flyff(handle, base, base_size);
+            
+            // create window
             hDlg = CreateDialogParam(HIthis, MAKEINTRESOURCE(IDD_DIALOG1), 0, DialogProc, 0);
             ShowWindow(hDlg, SW_SHOW);
             
             // setting toolstips(balloon versions)
             gToolTip::AddTip(hDlg, HIthis, "Enter desired range number(in float). Ex: 100", IDC_EDIT_RANGE, true);
             
-            BOOL ret;
-            MSG msg;
+            // listen window inputs
             while ((ret = GetMessage(&msg, 0, 0, 0)) != 0) {
-                if (ret == -1) /* error found */
+                if (ret == -1) // error found
                     return -1;
 
                 if (!IsDialogMessage(hDlg, &msg)) {
@@ -103,18 +110,16 @@ int main() {
                 }
             }
         } else {
-            char msg[255];
-            sprintf("Can't get control over %s\n", windowName);
+            sprintf(buf_msg, "Can't get control over %s\n", windowName);
             
-            printf(msg);
-            MessageBoxA(hthis, msg, "Error", 0);
+            printf(buf_msg);
+            MessageBoxA(hthis, buf_msg, "Error", 0);
         }
     } else {
-        char msg[255];
-        sprintf(msg, "Can't find %s window\n", windowName);
+        sprintf(buf_msg, "Can't find %s window\n", windowName);
         
-        printf(msg);
-        MessageBoxA(hthis, msg, "Error", 0);
+        printf(buf_msg);
+        MessageBoxA(hthis, buf_msg, "Error", 0);
     }
     return 0;
 }

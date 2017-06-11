@@ -9,5 +9,6 @@
 #define IDC_STATIC_RANGE                        1001
 #define IDC_EDIT_RANGE                          1002
 #define ID_SET_RANGE                            1003
+#define ID_SELECT_TARGET                        1004
 
 #endif

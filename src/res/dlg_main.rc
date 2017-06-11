@@ -22,4 +22,5 @@ FONT 8, "Ms Shell Dlg"
     LTEXT           "Range", IDC_STATIC_RANGE, 4, 6, 40, 8, SS_LEFT
     EDITTEXT        IDC_EDIT_RANGE, 44, 4, 75, 14, ES_AUTOHSCROLL
     DEFPUSHBUTTON   "Set", ID_SET_RANGE, 129, 4, 50, 14
+    DEFPUSHBUTTON   "Select target", ID_SELECT_TARGET, 4, 22, 75, 14
 }
