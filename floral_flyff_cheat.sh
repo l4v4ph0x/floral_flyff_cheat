@@ -1,6 +1,6 @@
 #!/bin/sh
 
-appname="floral_flyff_cheat.exe.so"
+appname="floral_flyff_cheat.exe"
 # determine the application directory
 appdir=''
 case "$0" in

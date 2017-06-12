@@ -99,6 +99,9 @@ flyff::flyff(void *handle, unsigned long base_addr, unsigned long base_size) {
 	// end of waiting _me_addr to point - }
 }
 
+void flyff::set_hwnd(void *hwnd) { _vars._hwnd = hwnd; }
+void *flyff::get_hwnd() { return _vars._hwnd; }
+
 void flyff::select(unsigned long target) {
 	unsigned long pointed = 0;
 	ZwReadVirtualMemory(_vars._handle, (void *)(_vars._select_addr), &pointed, 4, 0);
@@ -108,7 +111,7 @@ void flyff::select(unsigned long target) {
 unsigned long flyff::getSelect() {
 	unsigned long pointed = 0;
 	ZwReadVirtualMemory(_vars._handle, (void *)(_vars._select_addr), &pointed, 4, 0);
-	ZwReadVirtualMemory(_vars._handle, (LPCVOID)(pointed + OFFSET_SELECT), &pointed, 4, 0);
+	ZwReadVirtualMemory(_vars._handle, (void *)(pointed + OFFSET_SELECT), &pointed, 4, 0);
 	return pointed;
 }
 
@@ -126,32 +129,40 @@ float flyff::getHyp(targetInfo ti) {
 }
 
 flyff::targetInfo flyff::getClosestTargetInView() {
-	unsigned long maxInView = 0;
-	targetInfo closest_ti = targetInfo();
+	unsigned long maxInView;
+    unsigned long target;
+    unsigned long type;
+    unsigned long lvl;
+    unsigned char is_dead;
+    
+	targetInfo closest_ti;
+    
+    maxInView = 0;
+    closest_ti = targetInfo();
 	closest_ti.hyp = 99999999;
 
 	ZwReadVirtualMemory(_vars._handle, (void *)(_vars._maxInView_addr), &maxInView, 4, 0);
     
-    printf("maxInView: %d\n", maxInView);
+    //printf("maxInView: %d\n", maxInView);
     
 	for (unsigned long i = 1; i < maxInView; i++) {
-		unsigned long target;
-		unsigned long type;
-		unsigned long lvl;
-        unsigned char is_dead;
+		target = 0;
+        type = 0;
+        lvl = 0;
+        is_dead = 0;
 
 		ZwReadVirtualMemory(_vars._handle, (void *)(i * 4 + _vars._targetBase_addr), &target, 4, 0);
 		ZwReadVirtualMemory(_vars._handle, (void *)(target + 8), &type, 4, 0);
 		ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_LVL), &lvl, 4, 0);
 		ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_IS_DEAD), &is_dead, 1, 0);
 
-        printf("base: %08X\ntarget: %08X\ntype: %d\nlvl: %d\nis_dead: %d\n", i * 4 + _vars._targetBase_addr, target, type, lvl, is_dead);
+        //printf("base: %08X\ntarget: %08X\ntype: %d\nlvl: %d\nis_dead: %d\n", i * 4 + _vars._targetBase_addr, target, type, lvl, is_dead);
         
-		//if (type == 18 && lvl > 0 && lvl < 10000 && is_dead != 6) { // prablem reading type lvl and is_dead
+		if (type == 18 && lvl >= _vars._target_lvl_begin && lvl <= _vars._target_lvl_end && is_dead == 255) { // prablem reading type lvl and is_dead
 			targetInfo ti;
-			ZwReadVirtualMemory(_vars._handle, (LPCVOID)(target + OFFSET_X), &ti.x, 4, 0);
-			ZwReadVirtualMemory(_vars._handle, (LPCVOID)(target + OFFSET_X +4), &ti.y, 4, 0);
-			ZwReadVirtualMemory(_vars._handle, (LPCVOID)(target + OFFSET_X +8), &ti.z, 4, 0);
+			ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_X), &ti.x, 4, 0);
+			ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_X +4), &ti.y, 4, 0);
+			ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_X +8), &ti.z, 4, 0);
 			ti.hyp = getHyp(ti);
 
 			if (ti.hyp < closest_ti.hyp) {
@@ -159,10 +170,21 @@ flyff::targetInfo flyff::getClosestTargetInView() {
 				ti.lvl = lvl;
 				closest_ti = ti;
 			}
-		//}
+		}
 	}
 	
 	return closest_ti;
+}
+
+
+void flyff::set_target_lvls(int begin, int end) {
+    if (begin != -1) _vars._target_lvl_begin = begin;
+    if (end != -1) _vars._target_lvl_end = end;
+}
+
+void flyff::get_target_lvls(int *begin, int *end) {
+    *begin = _vars._target_lvl_begin;
+    *end = _vars._target_lvl_end;
 }
 
 
@@ -191,7 +213,7 @@ void flyff::set_range(float f) {
             
         // force to use set range
         ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._range_addr), (void *)"\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90", 12, 0, true);
-        ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._range_addr + 2), &_vars._range_nr_addr, 4, 0, true);
+        ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._range_addr +12 +2), &_vars._range_nr_addr, 4, 0, true);
         
         bo_set_range = true;
     }
