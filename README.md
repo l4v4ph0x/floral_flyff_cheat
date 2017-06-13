@@ -2,7 +2,7 @@
 <br/>
 <br/>
 # Wokring:
-<br />
-    range
-    target selecting with level range
-    pressing function key(F key) when target selected
+<br/>
+    range<br/>
+    target selecting with level range(without pets)<br/>
+    pressing function key(F key) when target selected<br/>
