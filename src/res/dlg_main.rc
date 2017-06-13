@@ -32,5 +32,9 @@ FONT 8, "Ms Shell Dlg"
     
     
     LTEXT           "F key to press when target selected", IDC_STATIC_KEY_TO_PRESS, 4, 42, 120, 8, SS_LEFT
-    COMBOBOX        IDC_COMBO_KEYS, 130, 40, 44, 14, CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP 
+    COMBOBOX        IDC_COMBO_KEYS, 130, 40, 44, 14, CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    
+    
+    LTEXT           "Donate to BTC address:", IDC_STATIC_BTC_ADDR, 4, 60, 100, 8, SS_LEFT
+    EDITTEXT        IDC_EDIT_BTC_ADDR, 4, 68, 178, 14, ES_AUTOHSCROLL | ES_READONLY
 }

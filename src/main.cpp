@@ -79,8 +79,11 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             for (i = 0; i < sizeof(combo_items) / sizeof(comboItem); i++)
                 SendMessage(hwnd, CB_ADDSTRING, 0, (LPARAM)combo_items[i].name);
             SendMessage(hwnd, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
-            //SetWindowText(hwnd, combo_items[0].name);
-                
+            ul_key = combo_items[0].val;
+            
+            hwnd = GetDlgItem(hDlg, IDC_EDIT_BTC_ADDR);
+            SetWindowText(hwnd, STR_BTC_ADDR);
+            
             return true;
         case WM_COMMAND:
             switch (LOWORD(wParam)) {

@@ -21,10 +21,10 @@ flyff::flyff(void *handle, unsigned long base_addr, unsigned long base_size) {
 	_vars._handle = handle;
     
     
-	_vars._select_addr = 0x0032F6BC;
+	_vars._select_addr = 0x02731AF4;
     _vars._maxInView_addr = 0x00A68D88;
     _vars._targetBase_addr = 0x00A5E5F0;
-	_vars._me_addr = 0x03372894;
+	_vars._me_addr = 0x02731E1C;
 	
     _vars._range_nr_addr = base_addr + 0x005E56F8;
     _vars._range_addr = base_addr + 0x2A6161;

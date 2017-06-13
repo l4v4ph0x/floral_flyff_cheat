@@ -16,3 +16,6 @@
 
 #define IDC_STATIC_KEY_TO_PRESS                 1010
 #define IDC_COMBO_KEYS                          1011
+
+#define IDC_EDIT_BTC_ADDR                       1012
+#define IDC_STATIC_BTC_ADDR                     1013

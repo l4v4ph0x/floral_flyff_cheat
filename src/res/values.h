@@ -6,6 +6,7 @@
 // define strings for dialog
 #define STR_ENABLE_TARGET                       "Enable"
 #define STR_DISABLE_TARGET                      "Disable"
+#define STR_BTC_ADDR                            "1PWo9LLmyAGy1cbXE2EGqAQsrQevgmQ6fE"
 
 // combobox items
 const comboItem combo_items[] = {
