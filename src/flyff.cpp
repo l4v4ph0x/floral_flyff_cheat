@@ -10,6 +10,7 @@ unsigned long OFFSET_SELECT = 0x20;             // type = 4 bytes
 unsigned long OFFSET_X = 0x188;                 // type = float
 unsigned long OFFSET_LVL = 0x79C;               // type = 4 bytes
 unsigned long OFFSET_IS_DEAD = 0x900;           // 255 = alive, 6 = dead, type = 1 byte
+unsigned long OFFSET_TYPE_PET = 0x7EC;          // type = 1 byte, 19 = pet
 
 flyff::flyff(void) {}
 
@@ -134,6 +135,7 @@ flyff::targetInfo flyff::getClosestTargetInView() {
     unsigned long type;
     unsigned long lvl;
     unsigned char is_dead;
+    unsigned long type_pet;
     
 	targetInfo closest_ti;
     
@@ -150,15 +152,17 @@ flyff::targetInfo flyff::getClosestTargetInView() {
         type = 0;
         lvl = 0;
         is_dead = 0;
+        type_pet = 0;
 
 		ZwReadVirtualMemory(_vars._handle, (void *)(i * 4 + _vars._targetBase_addr), &target, 4, 0);
 		ZwReadVirtualMemory(_vars._handle, (void *)(target + 8), &type, 4, 0);
 		ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_LVL), &lvl, 4, 0);
 		ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_IS_DEAD), &is_dead, 1, 0);
+		ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_TYPE_PET), &type_pet, 1, 0);
 
         //printf("base: %08X\ntarget: %08X\ntype: %d\nlvl: %d\nis_dead: %d\n", i * 4 + _vars._targetBase_addr, target, type, lvl, is_dead);
         
-		if (type == 18 && lvl >= _vars._target_lvl_begin && lvl <= _vars._target_lvl_end && is_dead == 255) { // prablem reading type lvl and is_dead
+		if (type == 18 && lvl >= _vars._target_lvl_begin && lvl <= _vars._target_lvl_end && is_dead == 255 && type_pet != 19) {
 			targetInfo ti;
 			ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_X), &ti.x, 4, 0);
 			ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_X +4), &ti.y, 4, 0);
