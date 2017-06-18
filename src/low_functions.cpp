@@ -57,9 +57,9 @@ unsigned long ZwWriteVirtualMemory(
     
     unsigned int oldProtect;
     
-    if (safe == true) VirtualProtectEx(ProcessHandle, BaseAddress, BufferSize, PAGE_READWRITE, &oldProtect);
+    if (safe == true) VirtualProtectEx(ProcessHandle, BaseAddress, BufferSize, PAGE_EXECUTE_READWRITE, &oldProtect);
         unsigned long ret = pZwWriteVirtualMemory(ProcessHandle, BaseAddress, Buffer, BufferSize, NumberOfBytesWritten);
-    if (safe == true) VirtualProtectEx(ProcessHandle, BaseAddress, BufferSize, PAGE_READWRITE, &oldProtect);
+    if (safe == true) VirtualProtectEx(ProcessHandle, BaseAddress, BufferSize, &oldProtect, NULL);
     
     return ret;
 }
