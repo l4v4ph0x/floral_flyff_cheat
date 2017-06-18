@@ -2,7 +2,7 @@ IDIR=include
 
 RCINCLUDE=-I../wine/include
 INCLUDE_PATH=-I$(IDIR)
-CFLAGS=$(INCLUDE_PATH) $(RCINCLUDE) -mwindows -mno-cygwin -fpermissive
+CFLAGS=$(INCLUDE_PATH) $(RCINCLUDE) -mwindows -mno-cygwin -fpermissive -elf_i386
 
 SDIR=src
 ODIR=$(SDIR)/o

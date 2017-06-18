@@ -16,19 +16,21 @@ flyff::flyff(void) {}
 
 flyff::flyff(void *handle, unsigned long base_addr, unsigned long base_size) {
 	unsigned long addr;
-    unsigned char passInfo[8];
-    
+
+	_vars._base_addr = base_addr;
 	_vars._handle = handle;
     
     
-	_vars._select_addr = 0x02731AF4;
-    _vars._maxInView_addr = 0x00A68D88;
-    _vars._targetBase_addr = 0x00A5E5F0;
-	_vars._me_addr = 0x02731E1C;
+	_vars._select_addr = base_addr + 0x66EDE4;
+	_vars._maxInView_addr = base_addr + 0x668D88;
+    _vars._targetBase_addr = base_addr + 0x65E5F0;
+	_vars._me_addr = base_addr + 0x659A48;
 	
-    _vars._range_nr_addr = base_addr + 0x005E56F8;
+	
+    _vars._range_nr_addr = base_addr + 0x66FDA0;
     _vars._range_addr = base_addr + 0x2A6161;
     _vars._range_all_addr = base_addr + 0x2A654A;
+    
     
     
     

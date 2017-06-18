@@ -14,5 +14,5 @@ unsigned long get_module(unsigned long pid, char *module_name, unsigned long *si
 			if (size != 0) *size = me32.modBaseSize;
 				return (unsigned long)me32.modBaseAddr;
 		}
-	} return NULL;
+	} return 0;
 }

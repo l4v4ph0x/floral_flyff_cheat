@@ -226,9 +226,14 @@ int main() {
         handle = VZwOpenProcess(pid);
         
         if (handle) {
-            // set variables
-            base = 0x00400000; //get_module(pid, "Neuz.exe", &base_size); // get_module does not work on wine staging 2.9
-            base_size = 0x00917000; // this and base from immunity debugger
+            // get base and size if available
+			base = get_module(pid, "Neuz.exe", &base_size);
+
+			if (base == 0) {
+				// set variables
+				base = 0x00400000; //get_module(pid, "Neuz.exe", &base_size); // get_module does not work on wine staging 2.9
+				base_size = 0x00917000; // this and base from immunity debugger
+			}
             
             // loading flyff class
             f = flyff(handle, base, base_size);
