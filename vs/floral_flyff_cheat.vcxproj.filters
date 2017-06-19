@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="h">
+      <UniqueIdentifier>{482e9f58-5fbe-496c-a907-728f440c5ce1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="res">
+      <UniqueIdentifier>{6bf85376-fe88-476b-b0d9-892e653a3477}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\h\flyff.h">
+      <Filter>h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\h\gToolTip.h">
+      <Filter>h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\h\losu.h">
+      <Filter>h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\h\lowlvl.h">
+      <Filter>h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\h\structs.h">
+      <Filter>h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\h\summoner.h">
+      <Filter>h</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\res\resource.h">
+      <Filter>res</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\res\values.h">
+      <Filter>res</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\flyff.cpp" />
+    <ClCompile Include="..\src\gToolTip.cpp" />
+    <ClCompile Include="..\src\low_functions.cpp" />
+    <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\search.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\src\res\dlg_main.rc">
+      <Filter>res</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

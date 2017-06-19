@@ -222,7 +222,7 @@ int main() {
     hwnd = FindWindowA(0, windowName);
     if (hwnd) {
         // get privs to mod proc
-        GetWindowThreadProcessId(hwnd, &pid);
+        GetWindowThreadProcessId(hwnd, (LPDWORD)&pid);
         handle = VZwOpenProcess(pid);
         
         if (handle) {
