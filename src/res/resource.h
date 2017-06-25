@@ -2,7 +2,7 @@
 #define IDC_STATIC (-1)
 #endif
 
-#define IDD_DIALOG1                             100
+#define IDD_TAB_FLYFF                           100
 
 #define IDC_STATIC_RANGE                        1001
 #define IDC_EDIT_RANGE                          1002

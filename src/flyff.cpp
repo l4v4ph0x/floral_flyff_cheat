@@ -107,7 +107,7 @@ flyff::flyff(unsigned long pid) {
         
         error_string = nullptr;
         flyff(handle, base, base_size);
-    } else error_string = texts::error_open_process;
+    } else error_string = (char *)texts::error_open_process;
 }
 
 void flyff::load() {

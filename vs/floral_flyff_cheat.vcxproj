@@ -148,6 +148,7 @@
     <ClInclude Include="..\src\h\lowlvl.h" />
     <ClInclude Include="..\src\h\structs.h" />
     <ClInclude Include="..\src\h\summoner.h" />
+    <ClInclude Include="..\src\h\texts.h" />
     <ClInclude Include="..\src\res\resource.h" />
     <ClInclude Include="..\src\res\values.h" />
   </ItemGroup>
@@ -157,6 +158,7 @@
     <ClCompile Include="..\src\low_functions.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\search.cpp" />
+    <ClCompile Include="..\src\texts.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\src\res\dlg_main.rc" />
