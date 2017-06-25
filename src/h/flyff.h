@@ -21,11 +21,14 @@ class flyff {
             unsigned long _range_nr_addr;
         }; vars _vars;
         
-        
+        void load();
 
 	public:
+        char *error_string;
+        
 		flyff(void);
 		flyff(void *handle, unsigned long base_addr, unsigned long base_size);
+        flyff(unsigned long pid);
 
         void set_hwnd(void *hwnd);
         void *get_hwnd();
@@ -38,6 +41,8 @@ class flyff {
 			unsigned long hp;
 			char name[255];
 		};
+        
+        char *get_local_name();
 
 		void select(unsigned long target);
 		unsigned long getSelect();

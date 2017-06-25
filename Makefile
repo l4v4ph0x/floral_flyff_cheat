@@ -30,7 +30,8 @@ CXX_SRCS= $(SDIR)/low_functions.cpp \
 	$(SDIR)/main.cpp \
 	$(SDIR)/search.cpp \
 	$(SDIR)/gToolTip.cpp \
-	$(SDIR)/flyff.cpp
+	$(SDIR)/flyff.cpp \
+	$(SDIR)/texts.cpp
 	
 RC_SRCS=$(RDIR)/dlg_main.rc
 

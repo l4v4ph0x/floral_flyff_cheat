@@ -1,5 +1,7 @@
 #include "h/flyff.h"
 #include "h/losu.h"
+#include "h/summoner.h"
+#include "h/texts.h"
 
 #include <windows.h>
 #include <stdio.h>
@@ -11,6 +13,7 @@ unsigned long OFFSET_X = 0x188;                 // type = float
 unsigned long OFFSET_LVL = 0x79C;               // type = 4 bytes
 unsigned long OFFSET_IS_DEAD = 0x900;           // 255 = alive, 6 = dead, type = 1 byte
 unsigned long OFFSET_TYPE_PET = 0x7EC;          // type = 1 byte, 19 = pet
+unsigned long OFFSET_NAME = 0x23;               // char array
 
 flyff::flyff(void) {}
 
@@ -83,10 +86,34 @@ flyff::flyff(void *handle, unsigned long base_addr, unsigned long base_size) {
 	}
 	*/
 
+    load();	
+}
 
+flyff::flyff(unsigned long pid) {
+    void *handle;
+    unsigned long base, base_size;
+    
+    handle = VZwOpenProcess(pid);
+        
+    if (handle) {
+        // get base and size if available
+        base = get_module(pid, "Neuz.exe", &base_size);
 
+        if (base == 0) {
+            // set variables
+            base = 0x00400000; //get_module(pid, "Neuz.exe", &base_size); // get_module does not work on wine staging 2.9
+            base_size = 0x00917000; // this and base from immunity debugger
+        }
+        
+        error_string = nullptr;
+        flyff(handle, base, base_size);
+    } else error_string = texts::error_open_process;
+}
 
-	// { - waiting _select_addr to point
+void flyff::load() {
+    unsigned long addr;
+    
+    // { - waiting _select_addr to point
 	printf("waiting when _select_addr points ... ");
 	for (addr = 0; !addr; Sleep(200))
 		 ZwReadVirtualMemory(_vars._handle, (void *)(_vars._select_addr), &addr, 4, 0);
@@ -97,13 +124,19 @@ flyff::flyff(void *handle, unsigned long base_addr, unsigned long base_size) {
 	// { - waiting _me_addr to point
 	printf("waiting when _me_addr points ... ");
 	for (addr = 0; !addr; Sleep(200))
-		 ZwReadVirtualMemory(handle, (void *)(_vars._me_addr), &addr, 4, 0);
+		 ZwReadVirtualMemory(_vars._handle, (void *)(_vars._me_addr), &addr, 4, 0);
 	printf("%08X | Done\n", addr);
 	// end of waiting _me_addr to point - }
 }
 
 void flyff::set_hwnd(void *hwnd) { _vars._hwnd = hwnd; }
 void *flyff::get_hwnd() { return _vars._hwnd; }
+
+char *flyff::get_local_name() {
+    char name[255];
+    ZwReadVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_NAME), &name, 255, 0);
+    return name;
+}
 
 void flyff::select(unsigned long target) {
 	unsigned long pointed = 0;

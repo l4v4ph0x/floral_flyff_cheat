@@ -1,5 +1,8 @@
 #include <windows.h>
 #include <stdio.h>
+#include <commctrl.h>
+#include <vector>
+
 #include "h/losu.h"
 #include "h/summoner.h"
 #include "h/gToolTip.h"
@@ -17,6 +20,9 @@ unsigned long ul_key;
 // flyff and this window info
 HINSTANCE HIthis;
 char windowName[] = "Floral Flyff";
+
+HWND hTabControl; // tab control handle
+HWND hCurrentTab; // tab dialog handle
 
 unsigned long __stdcall _thread_select_target(void *t) {
     //flyff _f = *((flyff *)t); // main class for every client
@@ -59,32 +65,77 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             int begin, end, i;
             
             // set target selector button to enable
-            hwnd = GetDlgItem(hDlg, ID_TARGET_ENABLE);
-            SetWindowText(hwnd, STR_ENABLE_TARGET);
+            //hwnd = GetDlgItem(hDlg, ID_TARGET_ENABLE);
+            //SetWindowText(hwnd, STR_ENABLE_TARGET);
             
             // set target levels range
-            f.get_target_lvls(&begin, &end);
+            //f.get_target_lvls(&begin, &end);
                 // set begin one
-                sprintf(txt_buf, "%d", begin);
-                hwnd = GetDlgItem(hDlg, IDC_EDIT_TARGET_LVL_BEGIN);
-                SetWindowText(hwnd, txt_buf);
+           //     sprintf(txt_buf, "%d", begin);
+           //     hwnd = GetDlgItem(hDlg, IDC_EDIT_TARGET_LVL_BEGIN);
+           //     SetWindowText(hwnd, txt_buf);
                 // set end one
-                sprintf(txt_buf, "%d", end);
-                hwnd = GetDlgItem(hDlg, IDC_EDIT_TARGET_LVL_END);
-                SetWindowText(hwnd, txt_buf);
+           //     sprintf(txt_buf, "%d", end);
+           //     hwnd = GetDlgItem(hDlg, IDC_EDIT_TARGET_LVL_END);
+           //     SetWindowText(hwnd, txt_buf);
             
             // adding items to combobox
-            hwnd = GetDlgItem(hDlg, IDC_COMBO_KEYS);
+            //hwnd = GetDlgItem(hDlg, IDC_COMBO_KEYS);
             
-            for (i = 0; i < sizeof(combo_items) / sizeof(comboItem); i++)
-                SendMessage(hwnd, CB_ADDSTRING, 0, (LPARAM)combo_items[i].name);
+            //for (i = 0; i < sizeof(combo_items) / sizeof(comboItem); i++)
+            //    SendMessage(hwnd, CB_ADDSTRING, 0, (LPARAM)combo_items[i].name);
+            //SendMessage(hwnd, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
+            //ul_key = combo_items[0].val;
+            
+            //hwnd = GetDlgItem(hDlg, IDC_EDIT_BTC_ADDR);
+            //SetWindowText(hwnd, STR_BTC_ADDR);
+            
+            
+            // setting tabs
+            INITCOMMONCONTROLSEX ix;
+            ix.dwSize = sizeof(INITCOMMONCONTROLSEX);
+            ix.dwICC = ICC_TAB_CLASSES;
+            InitCommonControlsEx(&ix);
+            hTabControl = GetDlgItem(hDlg, IDC_TAB_MAIN);
+            
+            TCITEM ti;
+            ti.mask = TCIF_TEXT;
+            ti.pszText = "Select Flyff";
+            TabCtrl_InsertItem(hTabControl, 0, &ti);
+            TabCtrl_SetCurSel(hTabControl, 0);
+            hCurrentTab = CreateDialog(HIthis, MAKEINTRESOURCE(IDD_TAB_SELECT_FLYFF), hTabControl, 0);
+            
+            std::vector<comboItem> combo_names;
+            std::vector<unsigned long> pids = get_procs("Neuz.exe");
+            
+            for (i = 0; i < pids.size(); i++) {
+                comboItem ci;
+                ci.name = "fd";
+                combo_names.push_back(ci);
+            }
+
+            // adding items to combobox
+            hwnd = GetDlgItem(hCurrentTab, IDC_COMBO_PLAYERS);
+            
+            for (i = 0; i < combo_names.size(); i++)
+                SendMessage(hwnd, CB_ADDSTRING, 0, (LPARAM)combo_names[i].name);
             SendMessage(hwnd, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
-            ul_key = combo_items[0].val;
             
-            hwnd = GetDlgItem(hDlg, IDC_EDIT_BTC_ADDR);
-            SetWindowText(hwnd, STR_BTC_ADDR);
+            printf("done\n");
             
             return true;
+        case WM_NOTIFY:
+            switch (((LPNMHDR)lParam)->code) {
+                case TCN_SELCHANGING:
+                    EndDialog(hCurrentTab, 0);
+                    
+                    if (TabCtrl_GetCurSel(hTabControl) == 0)
+                        hCurrentTab = CreateDialog(HIthis, MAKEINTRESOURCE(IDD_TAB_SELECT_FLYFF), hTabControl, 0);
+                    
+                    return true;
+                
+                break;
+            }
         case WM_COMMAND:
             switch (LOWORD(wParam)) {
                 case ID_SET_RANGE:
@@ -219,6 +270,21 @@ int main() {
     hthis = GetConsoleWindow();
     HIthis = (HINSTANCE)GetWindowLong(hthis, -6);
     
+    // create window
+    hDlg = CreateDialogParam(HIthis, MAKEINTRESOURCE(IDD_DIALOG_MAIN), 0, DialogProc, 0);
+    ShowWindow(hDlg, SW_SHOW);
+    
+    // listen window inputs
+    while ((ret = GetMessage(&msg, 0, 0, 0)) != 0) {
+        if (ret == -1) // error found
+            return -1;
+
+        if (!IsDialogMessage(hDlg, &msg)) {
+            TranslateMessage(&msg); // translate virtual-key messages
+            DispatchMessage(&msg); // send it to dialog procedure
+        }
+    }
+    /*
     hwnd = FindWindowA(0, windowName);
     if (hwnd) {
         // get privs to mod proc
@@ -246,25 +312,14 @@ int main() {
             h_select_thread = nullptr;
             
             
-            // create window
-            hDlg = CreateDialogParam(HIthis, MAKEINTRESOURCE(IDD_DIALOG1), 0, DialogProc, 0);
-            ShowWindow(hDlg, SW_SHOW);
+            
             
             // setting toolstips(balloon versions)
-            gToolTip::AddTip(hDlg, HIthis, "Enter desired range number(in float). Ex: 100", IDC_EDIT_RANGE, true);
-            gToolTip::AddTip(hDlg, HIthis, "Enter desired lowest level to select. Ex: 1", IDC_EDIT_TARGET_LVL_BEGIN, true);
-            gToolTip::AddTip(hDlg, HIthis, "Enter desired highest level to select. Ex: 22", IDC_EDIT_TARGET_LVL_END, true);
+            //gToolTip::AddTip(hDlg, HIthis, "Enter desired range number(in float). Ex: 100", IDC_EDIT_RANGE, true);
+            //gToolTip::AddTip(hDlg, HIthis, "Enter desired lowest level to select. Ex: 1", IDC_EDIT_TARGET_LVL_BEGIN, true);
+            //gToolTip::AddTip(hDlg, HIthis, "Enter desired highest level to select. Ex: 22", IDC_EDIT_TARGET_LVL_END, true);
             
-            // listen window inputs
-            while ((ret = GetMessage(&msg, 0, 0, 0)) != 0) {
-                if (ret == -1) // error found
-                    return -1;
-
-                if (!IsDialogMessage(hDlg, &msg)) {
-                    TranslateMessage(&msg); // translate virtual-key messages
-                    DispatchMessage(&msg); // send it to dialog procedure
-                }
-            }
+            
         } else {
             sprintf(buf_msg, "Can't get control over %s\n", windowName);
             
@@ -277,5 +332,7 @@ int main() {
         printf(buf_msg);
         MessageBoxA(hthis, buf_msg, "Error", 0);
     }
+    
+    */
     return 0;
 }

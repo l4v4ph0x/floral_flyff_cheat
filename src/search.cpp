@@ -1,6 +1,8 @@
 #include "h/summoner.h"
+
 #include <tlhelp32.h>
 #include <stdio.h>
+#include <vector>
 
 unsigned long get_module(unsigned long pid, char *module_name, unsigned long *size) {
 	void *snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid);
@@ -15,4 +17,18 @@ unsigned long get_module(unsigned long pid, char *module_name, unsigned long *si
 				return (unsigned long)me32.modBaseAddr;
 		}
 	} return 0;
+}
+
+std::vector<unsigned long> get_procs(char *name) {
+    std::vector<unsigned long> pids;
+    
+	void *snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	PROCESSENTRY32 pe32;
+	pe32.dwSize = sizeof(PROCESSENTRY32);
+    
+	while (Process32Next(snapshot, &pe32))
+		if (strcmp(pe32.szExeFile, name) == 0)
+            pids.push_back(pe32.th32ProcessID);
+	
+	return pids;
 }

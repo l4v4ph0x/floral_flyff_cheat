@@ -19,3 +19,14 @@
 
 #define IDC_EDIT_BTC_ADDR                       1012
 #define IDC_STATIC_BTC_ADDR                     1013
+
+
+// selecting flyff rc
+#define IDD_DIALOG_MAIN                         1014
+#define IDD_TAB_SELECT_FLYFF                    1015
+
+#define IDC_TAB_MAIN                            1016
+#define MSG_ONE                                 1017
+#define IDC_STATIC_SELECT_CLIENT                1018
+#define IDC_COMBO_PLAYERS                       1019
+#define ID_HOOK                                 1020
