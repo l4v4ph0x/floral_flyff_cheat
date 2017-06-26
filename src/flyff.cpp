@@ -13,80 +13,51 @@ unsigned long OFFSET_X = 0x188;                 // type = float
 unsigned long OFFSET_LVL = 0x79C;               // type = 4 bytes
 unsigned long OFFSET_IS_DEAD = 0x900;           // 255 = alive, 6 = dead, type = 1 byte
 unsigned long OFFSET_TYPE_PET = 0x7EC;          // type = 1 byte, 19 = pet
-unsigned long OFFSET_NAME = 0x23;               // char array
+unsigned long OFFSET_NAME = 0x1890;             // char array
+
+// no class functinos
+unsigned long __stdcall _thread_select_target(void *t) {
+    flyff f = *((flyff *)t); // main class for every client
+    flyff::key k;
+    
+    flyff::targetInfo ti;
+    f.select(0);
+    
+    for (;; Sleep(100)) {
+        if (f.getSelect() == 0) {
+            // rotate cam
+            PostMessage((HWND)f.get_hwnd(), WM_KEYDOWN, VK_LEFT, MapVirtualKey(VK_LEFT, MAPVK_VK_TO_VSC));
+            Sleep(20);
+            PostMessage((HWND)f.get_hwnd(), WM_KEYUP, VK_LEFT, MapVirtualKey(VK_LEFT, MAPVK_VK_TO_VSC));
+            
+            ti = f.getClosestTargetInView();
+            
+            if (ti.base != 0) {
+                printf("closest target: %08X\n", ti.base);
+                if (ti.base != 0) {
+                    f.select(ti.base);
+                }   
+            }
+        } else {
+            // get key to use
+            if (f.getKey(&k)) {
+                // send key to window
+                Sleep(20);
+                PostMessage((HWND)f.get_hwnd(), WM_KEYDOWN, k.key, MapVirtualKey(k.key, MAPVK_VK_TO_VSC));
+                Sleep(20);
+                PostMessage((HWND)f.get_hwnd(), WM_KEYUP, k.key, MapVirtualKey(k.key, MAPVK_VK_TO_VSC));
+            }
+        }
+    }
+    
+    return 0;
+}
+
 
 flyff::flyff(void) {}
 
 flyff::flyff(void *handle, unsigned long base_addr, unsigned long base_size) {
-	unsigned long addr;
-
-	_vars._base_addr = base_addr;
-	_vars._handle = handle;
-    
-    
-	_vars._select_addr = base_addr + 0x66EDE4;
-	_vars._maxInView_addr = base_addr + 0x668D88;
-    _vars._targetBase_addr = base_addr + 0x65E5F0;
-	_vars._me_addr = base_addr + 0x659A48;
-	
-	
-    _vars._range_nr_addr = base_addr + 0x66FDA0;
-    _vars._range_addr = base_addr + 0x2A6161;
-    _vars._range_all_addr = base_addr + 0x2A654A;
-    
-    
-    
-    
-    /*
-	printf("searching for _maxInView_addr and _targetBase_addr ... ");
-	addr = search(handle, base_addr, base_size, "\x33\xF6\x33\xD2\x85\xED", 6, 1);
-	if (addr) {
-		ReadProcessMemory(handle, (void **)(addr - 0x6 + 2), &_maxInView_addr, 4, 0);
-		ReadProcessMemory(handle, (void **)(addr + 0x17 + 3), &_targetBase_addr, 4, 0);
-		printf("%08X %08X | Done\n", _maxInView_addr, _targetBase_addr);
-	} else {
-		printf("| Failed\n");
-		exit(0);
-	}
-
-	printf("searching for _me_addr ... ");
-	addr = search(handle, base_addr, base_size, "\x8B\x13\x8B\xCB\xFF\x52\x04", 7, 1);
-	if (addr) {
-		ReadProcessMemory(handle, (void **)(addr + 0x7 + 2), &_me_addr, 4, 0);
-		printf("%08X | Done\n", _me_addr);
-	} else {
-		printf("| Failed\n");
-		exit(0);
-	}
-
-	printf("searching for anti mem select bypass ... ");
-	addr = search(handle, base_addr, base_size, "\x6A\x02\x6A\xFF\xB9", 5, 1);
-	if (addr) {
-		signed long _tmp;
-		ReadProcessMemory(handle, (void **)(addr - 0x10 + 1), &_ecx, 4, 0);
-		ReadProcessMemory(handle, (void **)(addr - 0xB + 1), &_tmp, 4, 0);
-		_call = addr + _tmp -6;
-		printf("| Done\n");
-	} else {
-		printf("| Failed\n");
-		exit(0);
-	}
-
-	printf("searching no collision to enable ... ");
-	addr = search(handle, base_addr, base_size, "\x83\xEC\x30\x55\x8B\xE9\xD9", 7, 1);
-	if (addr) {
-		ReadProcessMemory(handle, (void **)(addr - 0x36 + 1), &addr, 4, 0);
-
-		unsigned long oldProtect;
-		VirtualProtectEx(_handle, (LPVOID)(addr), 1, PAGE_EXECUTE_READWRITE, &oldProtect);
-		WriteProcessMemory(handle, (void **)(addr), "\x0", 1, 0);
-		printf("| Done\n");
-	} else {
-		printf("| Failed\n");
-	}
-	*/
-
-    load();	
+    load(handle, base_addr, base_size);	
 }
 
 flyff::flyff(unsigned long pid) {
@@ -106,36 +77,67 @@ flyff::flyff(unsigned long pid) {
         }
         
         error_string = nullptr;
-        flyff(handle, base, base_size);
+        load(handle, base, base_size);
     } else error_string = (char *)texts::error_open_process;
 }
 
-void flyff::load() {
+void flyff::load(void *handle, unsigned long base_addr, unsigned long base_size) {
     unsigned long addr;
+    char name[256];
     
-    // { - waiting _select_addr to point
-	printf("waiting when _select_addr points ... ");
-	for (addr = 0; !addr; Sleep(200))
-		 ZwReadVirtualMemory(_vars._handle, (void *)(_vars._select_addr), &addr, 4, 0);
-	printf("%08X | Done\n", addr + OFFSET_SELECT);
-	// end of waiting _select_add to point - }
+    ZwReadVirtualMemory(handle, (void *)(0x6615D1B), &name, 11, 0);
+    
+    // null some
+    _vars._h_select_thread = nullptr;
+    
+    if (memcmp("floralflyff", name, 11) == 0) {
+        _vars._base_addr = base_addr;
+        _vars._handle = handle;
+        
+        
+        _vars._select_addr = base_addr + 0x66EDE4;
+        _vars._maxInView_addr = base_addr + 0x668D88;
+        _vars._targetBase_addr = base_addr + 0x65E5F0;
+        _vars._me_addr = base_addr + 0x659A48;
+        
+        
+        _vars._range_nr_addr = base_addr + 0x66FDA0;
+        _vars._range_addr = base_addr + 0x2A6161;
+        _vars._range_all_addr = base_addr + 0x2A654A;
+        
+        // { - waiting _select_addr to point
+        printf("waiting when _select_addr points ... ");
+        for (addr = 0; !addr; Sleep(20))
+            ZwReadVirtualMemory(_vars._handle, (void *)(_vars._select_addr), &addr, 4, 0);
+        printf("%08X | Done\n", addr + OFFSET_SELECT);
+        // end of waiting _select_add to point - }
 
-    
-	// { - waiting _me_addr to point
-	printf("waiting when _me_addr points ... ");
-	for (addr = 0; !addr; Sleep(200))
-		 ZwReadVirtualMemory(_vars._handle, (void *)(_vars._me_addr), &addr, 4, 0);
-	printf("%08X | Done\n", addr);
-	// end of waiting _me_addr to point - }
+        
+        // { - waiting _me_addr to point
+        printf("waiting when _me_addr points ... ");
+        for (addr = 0; !addr; Sleep(20))
+            ZwReadVirtualMemory(_vars._handle, (void *)(_vars._me_addr), &addr, 4, 0);
+        printf("%08X | Done\n", addr);
+        // end of waiting _me_addr to point - }
+    }
+}
+
+bool flyff::run() {
+    if (_vars._h_select_thread == nullptr) {
+        _vars._h_select_thread = CreateThread(0, 0, _thread_select_target, this, 0, 0);
+        return false;
+    } return true;
+}
+void flyff::stop() {
+    TerminateThread(_vars._h_select_thread, 0);
+    _vars._h_select_thread = nullptr;
 }
 
 void flyff::set_hwnd(void *hwnd) { _vars._hwnd = hwnd; }
 void *flyff::get_hwnd() { return _vars._hwnd; }
 
-char *flyff::get_local_name() {
-    char name[255];
-    ZwReadVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_NAME), &name, 255, 0);
-    return name;
+void flyff::get_local_name(char *name) {
+    ZwReadVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_NAME), &*name, 255, 0);
 }
 
 void flyff::select(unsigned long target) {
@@ -215,6 +217,27 @@ flyff::targetInfo flyff::getClosestTargetInView() {
 	return closest_ti;
 }
 
+
+void flyff::addUpdateAttackKey(unsigned char key, float priority, bool remove) {
+    flyff::key k;
+    k.key = key;
+    k.priority = priority;
+    
+    _vars._keys.clear();
+    _vars._keys.push_back(k);
+}
+
+bool flyff::getKey(flyff::key *k) {
+    if (_vars._keys.size() > 0) {
+        *k = _vars._keys[0];
+        return true;
+    }
+    return false;
+}
+
+void flyff::attack() {
+    
+}
 
 void flyff::set_target_lvls(int begin, int end) {
     if (begin != -1) _vars._target_lvl_begin = begin;

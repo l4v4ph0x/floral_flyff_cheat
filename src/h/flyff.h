@@ -1,7 +1,15 @@
 #ifndef FLYFF_H
 #define FLYFF_H
 
+#include <vector>
+
 class flyff {
+    public:
+        struct key {
+            unsigned char key;
+            float priority;
+        };
+    
 	private:
         // variables
         struct vars {
@@ -19,9 +27,12 @@ class flyff {
             unsigned long _range_all_addr;
             unsigned long _range_addr;
             unsigned long _range_nr_addr;
+            
+            std::vector<key> _keys;
+            void *_h_select_thread;
         }; vars _vars;
         
-        void load();
+        void load(void *handle, unsigned long base_addr, unsigned long base_size);
 
 	public:
         char *error_string;
@@ -29,6 +40,9 @@ class flyff {
 		flyff(void);
 		flyff(void *handle, unsigned long base_addr, unsigned long base_size);
         flyff(unsigned long pid);
+        
+        bool run();
+        void stop();
 
         void set_hwnd(void *hwnd);
         void *get_hwnd();
@@ -42,13 +56,16 @@ class flyff {
 			char name[255];
 		};
         
-        char *get_local_name();
+        void get_local_name(char *name);
 
 		void select(unsigned long target);
 		unsigned long getSelect();
 		unsigned long getMe();
 		float getHyp(targetInfo ti);
 		targetInfo getClosestTargetInView();
+        void addUpdateAttackKey(unsigned char key, float priority, bool remove = false);
+        bool getKey(key *k);
+        void attack();
 
         void set_target_lvls(int begin = -1, int end = -1);
         void get_target_lvls(int *begin, int *end);
