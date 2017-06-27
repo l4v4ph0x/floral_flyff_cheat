@@ -17,26 +17,42 @@ unsigned long OFFSET_NAME = 0x1890;             // char array
 
 // no class functinos
 unsigned long __stdcall _thread_select_target(void *t) {
-    flyff f = *((flyff *)t); // main class for every client
+    bool killed;
+    flyff f;
     flyff::key k;
-    
     flyff::targetInfo ti;
+    
+    f = *((flyff *)t); // main class for every client
+    killed = true;
+    
+    f.set_kill_to_home(3);
+    f.save_location();
     f.select(0);
     
     for (;; Sleep(100)) {
         if (f.getSelect() == 0) {
+            if (killed == false) {
+                if (f.get_killed_count() >= f.get_kill_to_home()) {
+                    f.teleport_to_saved_pos();
+                    f.set_killed_count(0);
+                }
+                f.set_killed_count(f.get_killed_count() + 1);
+            }
+            
             // rotate cam
             PostMessage((HWND)f.get_hwnd(), WM_KEYDOWN, VK_LEFT, MapVirtualKey(VK_LEFT, MAPVK_VK_TO_VSC));
             Sleep(20);
             PostMessage((HWND)f.get_hwnd(), WM_KEYUP, VK_LEFT, MapVirtualKey(VK_LEFT, MAPVK_VK_TO_VSC));
             
             ti = f.getClosestTargetInView();
-            
             if (ti.base != 0) {
                 printf("closest target: %08X\n", ti.base);
-                if (ti.base != 0) {
-                    f.select(ti.base);
-                }   
+                f.select(ti.base);
+                
+                if (f.get_kill_to_home() > 0)
+                    f.teleport_to_target(ti.base);
+                
+                killed = false;
             }
         } else {
             // get key to use
@@ -85,12 +101,12 @@ void flyff::load(void *handle, unsigned long base_addr, unsigned long base_size)
     unsigned long addr;
     char name[256];
     
-    ZwReadVirtualMemory(handle, (void *)(0x6615D1B), &name, 11, 0);
+    ZwReadVirtualMemory(handle, (void *)(base_addr + 0x650F47), &name, 12, 0);
     
     // null some
     _vars._h_select_thread = nullptr;
     
-    if (memcmp("floralflyff", name, 11) == 0) {
+    if (memcmp("Floral Flyff", name, 12) == 0) {
         _vars._base_addr = base_addr;
         _vars._handle = handle;
         
@@ -119,6 +135,8 @@ void flyff::load(void *handle, unsigned long base_addr, unsigned long base_size)
             ZwReadVirtualMemory(_vars._handle, (void *)(_vars._me_addr), &addr, 4, 0);
         printf("%08X | Done\n", addr);
         // end of waiting _me_addr to point - }
+    } else {
+        error_string = texts::error_wrong_flyff;
     }
 }
 
@@ -252,22 +270,25 @@ void flyff::get_target_lvls(int *begin, int *end) {
 
 void flyff::teleport_to_target(unsigned long target) {
 	unsigned char pos[12];
-	//ReadProcessMemory(_handle, (LPCVOID)(target + OFFSET_X), &pos, 12, 0);
-	//*(float *)(pos +4) += 3.f;
-	//WriteProcessMemory(_handle, (LPVOID)(getMe() + OFFSET_X), &pos, 12, 0);
+	ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_X), &pos, 12, 0);
+	*(float *)(pos +4) += 3.f;
+	ZwWriteVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_X), &pos, 12, 0);
 }
 
-unsigned char saved_pos[12];
 void flyff::save_location() {
-	//ReadProcessMemory(_handle, (LPCVOID)(getMe() + OFFSET_X), &saved_pos, 12, 0);
-	//*(float *)(saved_pos +4) += 3.f;
+	ZwReadVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_X), &_vars._saved_pos, 12, 0);
+	*(float *)(_vars._saved_pos +4) += 3.f;
 }
 
 void flyff::teleport_to_saved_pos() {
-	//WriteProcessMemory(_handle, (LPVOID)(getMe() + OFFSET_X), &saved_pos, 12, 0);
+	ZwWriteVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_X), &_vars._saved_pos, 12, 0);
 }
 
-bool bo_set_range = false;
+double flyff::get_killed_count() { return _vars._killed_count; }
+void flyff::set_killed_count(double val) { _vars._killed_count = val; }
+double flyff::get_kill_to_home() { return _vars._kill_to_home; }
+void flyff::set_kill_to_home(double val) { _vars._kill_to_home = val; }
+
 void flyff::set_range(float f) {
     if (bo_set_range == false) {
         // enabling range for everyone
