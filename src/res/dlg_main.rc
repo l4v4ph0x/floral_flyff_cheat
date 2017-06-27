@@ -31,6 +31,12 @@ FONT 8, "Ms Shell Dlg"
     
     LTEXT           "F key to press when target selected", IDC_STATIC_KEY_TO_PRESS, 4, 42, 120, 8, SS_LEFT
     COMBOBOX        IDC_COMBO_KEYS, 130, 40, 44, 14, CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    
+    AUTOCHECKBOX    "Teleport to target and back home after kills : ", IDC_CHECBKOX_TELE_TARGET_HOME, 4, 58, 160, 14
+    EDITTEXT        IDC_EDIT_TELE_HOME_AFTER_KILLS, 168, 58, 22, 14, ES_AUTOHSCROLL
+    
+    
+    DEFPUSHBUTTON   "noti text here", ID_NOTI, 4, 118, 362, 14, SS_LEFT
 }
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
@@ -41,7 +47,7 @@ FONT 8, "Ms Shell Dlg"
 {
     CONTROL         "", IDC_TAB_MAIN, "SysTabControl32", WS_VISIBLE | WS_TABSTOP, 5, 5, 390, 160
     
-    LTEXT           "Donate to BTC address:", IDC_STATIC_BTC_ADDR, 10, 170, 100, 8, SS_LEFT
+    LTEXT           "Donate to BTC address(every satoshi counts):", IDC_STATIC_BTC_ADDR, 10, 170, 100, 8, SS_LEFT
     EDITTEXT        IDC_EDIT_BTC_ADDR, 10, 178, 178, 14, ES_AUTOHSCROLL | ES_READONLY
 }
 

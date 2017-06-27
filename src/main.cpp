@@ -7,15 +7,14 @@
 #include "h/summoner.h"
 #include "h/gToolTip.h"
 #include "h/flyff.h"
+#include "h/texts.h"
 #include "res/resource.h"
 #include "res/values.h"
 
 // controller vars
 std::vector<flyff> fs;
 
-// select thread vars
-void *h_select_thread;
-unsigned long ul_key;
+unsigned int when_close_noti;
 
 // flyff and this window info
 HINSTANCE HIthis;
@@ -42,6 +41,35 @@ void add_tab(char *title, unsigned int tab, LPARAM lParam = 0) {
 
 	EndDialog(hCurrentTab, 0);
 	hCurrentTab = CreateDialog(HIthis, MAKEINTRESOURCE(tab), hTabControl, TabDialogProc);
+}
+
+unsigned long __stdcall _thread_hide_noti(void *t) {
+    HWND hwnd;
+    unsigned int miliseconds;
+    
+    miliseconds = 0;
+    hwnd = GetDlgItem(hCurrentTab, ID_NOTI);
+    
+    // sleep miliseconds that noti should show and sleep more if new noti has be created
+    for (; when_close_noti > 0; Sleep(miliseconds)) {
+        miliseconds = when_close_noti - miliseconds;
+        when_close_noti = 0;
+    }
+    
+    ShowWindow(hwnd, SW_HIDE);
+    
+    return 0;
+}
+
+void show_noti(char *txt, unsigned int miliseconds) {
+    HWND hwnd;
+    
+    when_close_noti = miliseconds;
+    hwnd = GetDlgItem(hCurrentTab, ID_NOTI);
+    
+    SetWindowText(hwnd, txt);
+    ShowWindow(hwnd, SW_SHOW);
+    CreateThread(0, 0, _thread_hide_noti, 0, 0, 0);
 }
 
 INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -76,11 +104,26 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 				SendMessage(hwnd, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
 			} else {
                 int begin, end;
+                double d;
+                
                 fCurrentTab = fs[index -1];
                 
                 fCurrentTab.get_local_name(txt_buf);
                 printf("loading tab: %s\n", txt_buf);
                 
+                // hide noti text
+                hwnd = GetDlgItem(hDlg, ID_NOTI);
+                ShowWindow(hwnd, SW_HIDE);
+                
+                // load tele to target and back home
+                d = fCurrentTab.get_kill_to_home();
+                if (d == 0) {
+                    // uncheck checkbox and edittext
+                    hwnd = GetDlgItem(hDlg, IDC_CHECBKOX_TELE_TARGET_HOME);
+                    SendMessage(hwnd, BM_SETCHECK, BST_UNCHECKED, 0);
+                    hwnd = GetDlgItem(hDlg, IDC_EDIT_TELE_HOME_AFTER_KILLS);
+                    EnableWindow(hwnd, false);
+                }
                 
                 // set target selector button to enable
                 hwnd = GetDlgItem(hDlg, ID_TARGET_ENABLE);
@@ -178,20 +221,26 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 				case IDC_EDIT_TARGET_LVL_BEGIN: {
 					switch (HIWORD(wParam)) {
 						case EN_CHANGE: {
-							int nr_lvl;
+							int begin, end, nr_lvl;
 
 							GetWindowTextA((HWND)lParam, txt_buf, sizeof(txt_buf) / sizeof(txt_buf[0]));
 							nr_lvl = atoi(txt_buf);
-
-							fCurrentTab.set_target_lvls(nr_lvl);
-
+							fCurrentTab.get_target_lvls(&begin, &end);
+                            
+                            // if really changed, then only change in class too
+                            if (nr_lvl != begin) {
+                                fCurrentTab.set_target_lvls(nr_lvl);
+                                
+                                if (fCurrentTab.run(false))
+                                    show_noti(texts::noti_reenable_bot, 6000);
+                            }
+                            
 							return true;
                         }
 						case EN_KILLFOCUS: {
 							int begin, end;
 
 							fCurrentTab.get_target_lvls(&begin, &end);
-
 							sprintf(txt_buf, "%d", begin);
 							SetWindowText((HWND)lParam, txt_buf);
 
@@ -206,20 +255,26 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 				case IDC_EDIT_TARGET_LVL_END: {
 					switch (HIWORD(wParam)) {
 						case EN_CHANGE: {
-							int nr_lvl;
+							int begin, end, nr_lvl;
 
 							GetWindowTextA((HWND)lParam, txt_buf, sizeof(txt_buf) / sizeof(txt_buf[0]));
 							nr_lvl = atoi(txt_buf);
-
-							fCurrentTab.set_target_lvls(-1, nr_lvl);
-
+                            fCurrentTab.get_target_lvls(&begin, &end);
+                            
+                            // if really changed, then only change in class too
+                            if (nr_lvl != end) {
+                                fCurrentTab.set_target_lvls(-1, nr_lvl);
+                                
+                                if (fCurrentTab.run(false))
+                                    show_noti(texts::noti_reenable_bot, 6000);
+                            }
+                            
 							return true;
                         }
 						case EN_KILLFOCUS: {
 							int begin, end;
 
 							fCurrentTab.get_target_lvls(&begin, &end);
-
 							sprintf(txt_buf, "%d", end);
 							SetWindowText((HWND)lParam, txt_buf);
 
@@ -237,6 +292,9 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 						printf("%s %x\n", combo_items[i].name, combo_items[i].val);
                         fCurrentTab.addUpdateAttackKey(combo_items[i].val, 100.f);
+                        
+                        if (fCurrentTab.run(false))
+                            show_noti(texts::noti_reenable_bot, 6000);
 					}
 
 					return true;
@@ -256,6 +314,86 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 					}
 
 					return true;
+                }
+                case IDC_CHECBKOX_TELE_TARGET_HOME: {
+                    // get control
+                    if (HIWORD(wParam) == BN_CLICKED) {
+                        bool checked = SendMessage((HWND)lParam, BM_GETCHECK, 0, 0);
+                        hwnd = GetDlgItem(hDlg, IDC_EDIT_TELE_HOME_AFTER_KILLS);
+                        
+                        if (checked == true) {
+                            EnableWindow(hwnd, true);
+                            fCurrentTab.set_kill_to_home(3);
+                            sprintf(txt_buf, "%.0f", fCurrentTab.get_kill_to_home());
+                            SetWindowText(hwnd, txt_buf);
+                        } else {
+                            EnableWindow(hwnd, false);
+                            fCurrentTab.set_kill_to_home(0);
+                            SetWindowText(hwnd, "");
+                        }
+                        
+                        if (fCurrentTab.run(false))
+                            show_noti(texts::noti_reenable_bot, 6000);
+                    }
+                    
+                    return true;
+                }
+                case IDC_EDIT_TELE_HOME_AFTER_KILLS: {
+                    switch (HIWORD(wParam)) {
+						case EN_CHANGE: {
+							double fl;
+
+                            hwnd = GetDlgItem(hDlg, IDC_CHECBKOX_TELE_TARGET_HOME);
+							GetWindowTextA((HWND)lParam, txt_buf, sizeof(txt_buf) / sizeof(txt_buf[0]));
+							fl = atof(txt_buf);
+							
+                            if (fl != fCurrentTab.get_kill_to_home()) {
+                                if (fl <= 0) {
+                                    fCurrentTab.set_kill_to_home(0);
+                                    SendMessage(hwnd, BM_SETCHECK, BST_UNCHECKED, 0);
+                                } else {
+                                    fCurrentTab.set_kill_to_home(fl);
+                                    SendMessage(hwnd, BM_SETCHECK, BST_CHECKED, 0);
+                                }
+                                
+                                if (fCurrentTab.run(false))
+                                    show_noti(texts::noti_reenable_bot, 6000);
+                            }
+                            
+							return true;
+                        }
+						case EN_KILLFOCUS: {
+							sprintf(txt_buf, "%.0f", fCurrentTab.get_kill_to_home());
+							SetWindowText((HWND)lParam, txt_buf);
+
+                            if (fCurrentTab.get_kill_to_home() == 0) {
+                                EnableWindow((HWND)lParam, false);
+                                SetWindowText((HWND)lParam, "");
+                            }
+                            
+							return true;
+                        }
+                        
+                        break;
+					}
+
+					return true;
+                }
+                case ID_NOTI: {
+                    unsigned char loc[12];
+                    
+                    GetWindowTextA((HWND)lParam, txt_buf, sizeof(txt_buf) / sizeof(txt_buf[0]));
+                    
+                    if (strcmp(texts::noti_reenable_bot, txt_buf) == 0) {
+                        fCurrentTab.get_location(loc);
+                        
+                        // noti wants to reeable bot
+                        fCurrentTab.stop();
+                        fCurrentTab.save_location(loc);
+                        fCurrentTab.run();
+                    }
+                    
+                    ShowWindow((HWND)lParam, SW_HIDE);
                 }
                 
 				break;

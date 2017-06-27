@@ -25,25 +25,22 @@ unsigned long __stdcall _thread_select_target(void *t) {
     f = *((flyff *)t); // main class for every client
     killed = true;
     
-    f.set_kill_to_home(3);
-    f.save_location();
     f.select(0);
     
     for (;; Sleep(100)) {
         if (f.getSelect() == 0) {
-            if (killed == false) {
-                if (f.get_killed_count() >= f.get_kill_to_home()) {
-                    f.teleport_to_saved_pos();
-                    f.set_killed_count(0);
+            if (f.get_kill_to_home() > 0) {
+                if (killed == false) {
+                    if (f.get_killed_count() >= f.get_kill_to_home()) {
+                        f.teleport_to_saved_pos();
+                        f.set_killed_count(0);
+                        Sleep(1000);
+                    }
+                    f.set_killed_count(f.get_killed_count() + 1);
                 }
-                f.set_killed_count(f.get_killed_count() + 1);
             }
             
-            // rotate cam
-            PostMessage((HWND)f.get_hwnd(), WM_KEYDOWN, VK_LEFT, MapVirtualKey(VK_LEFT, MAPVK_VK_TO_VSC));
-            Sleep(20);
-            PostMessage((HWND)f.get_hwnd(), WM_KEYUP, VK_LEFT, MapVirtualKey(VK_LEFT, MAPVK_VK_TO_VSC));
-            
+            // select target if any
             ti = f.getClosestTargetInView();
             if (ti.base != 0) {
                 printf("closest target: %08X\n", ti.base);
@@ -54,13 +51,18 @@ unsigned long __stdcall _thread_select_target(void *t) {
                 
                 killed = false;
             }
+            
+            // rotate cam
+            PostMessage((HWND)f.get_hwnd(), WM_KEYDOWN, VK_RIGHT, MapVirtualKey(VK_RIGHT, MAPVK_VK_TO_VSC));
+            Sleep(50);
+            PostMessage((HWND)f.get_hwnd(), WM_KEYUP, VK_RIGHT, MapVirtualKey(VK_RIGHT, MAPVK_VK_TO_VSC));
         } else {
             // get key to use
             if (f.getKey(&k)) {
                 // send key to window
                 Sleep(20);
                 PostMessage((HWND)f.get_hwnd(), WM_KEYDOWN, k.code, MapVirtualKey(k.code, MAPVK_VK_TO_VSC));
-                Sleep(20);
+                Sleep(50);
                 PostMessage((HWND)f.get_hwnd(), WM_KEYUP, k.code, MapVirtualKey(k.code, MAPVK_VK_TO_VSC));
             }
         }
@@ -135,20 +137,35 @@ void flyff::load(void *handle, unsigned long base_addr, unsigned long base_size)
             ZwReadVirtualMemory(_vars._handle, (void *)(_vars._me_addr), &addr, 4, 0);
         printf("%08X | Done\n", addr);
         // end of waiting _me_addr to point - }
+        
+        // nulling some vars
+        set_kill_to_home(0);
+        set_killed_count(0);
+        memset(_vars._saved_pos, '\x00', 12);
     } else {
         error_string = (char *)texts::error_wrong_flyff;
     }
 }
 
-bool flyff::run() {
+bool flyff::run(bool run) {
     if (_vars._h_select_thread == nullptr) {
-        _vars._h_select_thread = CreateThread(0, 0, _thread_select_target, this, 0, 0);
+        if (run == true) {
+            // if position not saved yet then doing so
+            if (memcmp(_vars._saved_pos, "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 12) == 0)
+                save_location();
+            
+            // running target selecting, killing thread
+            _vars._h_select_thread = CreateThread(0, 0, _thread_select_target, this, 0, 0);
+        }
+        
         return false;
     } return true;
 }
 void flyff::stop() {
+    // terminating target selecting and killing thread and nulling vars
     TerminateThread(_vars._h_select_thread, 0);
     _vars._h_select_thread = nullptr;
+    memset(_vars._saved_pos, '\x00', 12);
 }
 
 void flyff::set_hwnd(void *hwnd) { _vars._hwnd = hwnd; }
@@ -271,13 +288,22 @@ void flyff::get_target_lvls(int *begin, int *end) {
 void flyff::teleport_to_target(unsigned long target) {
 	unsigned char pos[12];
 	ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_X), &pos, 12, 0);
-	*(float *)(pos +4) += 3.f;
+	*(float *)(pos +4) += 2.f;
 	ZwWriteVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_X), &pos, 12, 0);
 }
 
-void flyff::save_location() {
-	ZwReadVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_X), &_vars._saved_pos, 12, 0);
-	*(float *)(_vars._saved_pos +4) += 3.f;
+void flyff::save_location(unsigned char *loc) {
+    // if loc is null then getting local player pos, else given loc
+    if (loc == nullptr)
+        ZwReadVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_X), &_vars._saved_pos, 12, 0);
+    else memcpy(_vars._saved_pos, loc, 12);
+    
+	*(float *)(_vars._saved_pos +4) += 2.f;
+}
+
+void flyff::get_location(unsigned char *loc) {
+    // returning saved loc
+    memcpy(loc,  _vars._saved_pos, 12);
 }
 
 void flyff::teleport_to_saved_pos() {
