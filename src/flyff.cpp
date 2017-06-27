@@ -43,9 +43,9 @@ unsigned long __stdcall _thread_select_target(void *t) {
             if (f.getKey(&k)) {
                 // send key to window
                 Sleep(20);
-                PostMessage((HWND)f.get_hwnd(), WM_KEYDOWN, k.key, MapVirtualKey(k.key, MAPVK_VK_TO_VSC));
+                PostMessage((HWND)f.get_hwnd(), WM_KEYDOWN, k.code, MapVirtualKey(k.code, MAPVK_VK_TO_VSC));
                 Sleep(20);
-                PostMessage((HWND)f.get_hwnd(), WM_KEYUP, k.key, MapVirtualKey(k.key, MAPVK_VK_TO_VSC));
+                PostMessage((HWND)f.get_hwnd(), WM_KEYUP, k.code, MapVirtualKey(k.code, MAPVK_VK_TO_VSC));
             }
         }
     }
@@ -220,7 +220,7 @@ flyff::targetInfo flyff::getClosestTargetInView() {
 
 void flyff::addUpdateAttackKey(unsigned char key, float priority, bool remove) {
     flyff::key k;
-    k.key = key;
+    k.code = key;
     k.priority = priority;
     
     _vars._keys.clear();

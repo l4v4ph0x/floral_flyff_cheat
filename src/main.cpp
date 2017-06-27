@@ -106,7 +106,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                     fCurrentTab.addUpdateAttackKey(combo_items[0].val, 100.f);
                 } else {
                     for (i = 0; i < sizeof(combo_items) / sizeof(comboItem); i++) {
-                        if (combo_items[i].val == k.key) {
+                        if (combo_items[i].val == k.code) {
                             SendMessage(hwnd, CB_SETCURSEL, (WPARAM)i, (LPARAM)0);
                             break;
                         }

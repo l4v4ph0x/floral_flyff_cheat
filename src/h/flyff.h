@@ -6,7 +6,7 @@
 class flyff {
     public:
         struct key {
-            unsigned char key;
+            unsigned char code;
             float priority;
         };
     
