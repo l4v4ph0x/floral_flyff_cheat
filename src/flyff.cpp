@@ -29,15 +29,17 @@ unsigned long __stdcall _thread_select_target(void *t) {
     
     for (;; Sleep(100)) {
         if (f.getSelect() == 0) {
-            if (f.get_kill_to_home() > 0) {
-                if (killed == false) {
-                    if (f.get_killed_count() >= f.get_kill_to_home()) {
-                        f.teleport_to_saved_pos();
-                        f.set_killed_count(0);
-                        Sleep(1000);
-                    }
-                    f.set_killed_count(f.get_killed_count() + 1);
+            if (killed == false) {
+                if (f.get_kill_to_home() > 0 && f.get_killed_count() >= f.get_kill_to_home()) {
+                    f.teleport_to_saved_pos();
+                    f.set_killed_count(0);
+                    Sleep(1000);
                 }
+                
+                f.set_killed_count(f.get_killed_count() + 1);
+                
+                // setting bot statis text to searching
+                SetWindowText(f.get_hwnd_noti(), (char *)texts::noti_bot_searching_target);
             }
             
             // select target if any
@@ -50,6 +52,9 @@ unsigned long __stdcall _thread_select_target(void *t) {
                     f.teleport_to_target(ti.base);
                 
                 killed = false;
+                
+                // setting bot status text to attacking
+                SetWindowText(f.get_hwnd_noti(), (char *)texts::noti_bot_attacking_target);
             }
             
             // rotate cam
@@ -158,6 +163,9 @@ bool flyff::run(bool run) {
             
             // running target selecting, killing thread
             _vars._h_select_thread = CreateThread(0, 0, _thread_select_target, this, 0, 0);
+            // set bot status text to created
+            SendMessage(get_hwnd_noti(), WM_SETTEXT, 0, (LPARAM)texts::noti_bot_created);
+            //SetWindowText(get_hwnd_noti(), (char *));
         }
         
         return false;
@@ -168,6 +176,8 @@ void flyff::stop() {
     TerminateThread(_vars._h_select_thread, 0);
     _vars._h_select_thread = nullptr;
     memset(_vars._saved_pos, '\x00', 12);
+    // set bot status text to idle
+    SetWindowText(get_hwnd_noti(), (char *)texts::noti_bot_idle);
 }
 
 void flyff::set_hwnd(void *hwnd) { _vars._hwnd = hwnd; }
@@ -343,4 +353,16 @@ bool flyff::get_no_collision() {
     bool collision;
     ZwReadVirtualMemory(_vars._handle, (void *)(_vars._no_collision_addr), &collision, 1, 0);
     return !collision;
+}
+
+
+
+
+
+
+void flyff::set_hwnd_noti(void *hwnd) {
+    hwnd_noti = hwnd;
+}
+void *flyff::get_hwnd_noti() {
+    return hwnd_noti;
 }
