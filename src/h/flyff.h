@@ -32,6 +32,8 @@ class flyff {
             unsigned long _range_addr;
             unsigned long _range_nr_addr;
             
+            unsigned long _no_collision_addr;
+            
             std::vector<key> _keys;
             void *_h_select_thread;
         }; vars _vars;
@@ -87,6 +89,9 @@ class flyff {
         void set_kill_to_home(double val);
         
         void set_range(float f);
+        
+        void set_no_collision(bool state);
+        bool get_no_collision();
 };
 
 #endif

@@ -35,6 +35,7 @@ FONT 8, "Ms Shell Dlg"
     AUTOCHECKBOX    "Teleport to target and back home after kills : ", IDC_CHECBKOX_TELE_TARGET_HOME, 4, 58, 160, 14
     EDITTEXT        IDC_EDIT_TELE_HOME_AFTER_KILLS, 168, 58, 22, 14, ES_AUTOHSCROLL
     
+    AUTOCHECKBOX    "no collision", IDC_CHECBKOX_NO_COLLISION, 4, 76, 50, 14
     
     DEFPUSHBUTTON   "noti text here", ID_NOTI, 4, 118, 362, 14, SS_LEFT
 }
