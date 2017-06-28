@@ -39,7 +39,7 @@ unsigned long __stdcall _thread_select_target(void *t) {
                 f.set_killed_count(f.get_killed_count() + 1);
                 
                 // setting bot statis text to searching
-                SetWindowText(f.get_hwnd_noti(), (char *)texts::noti_bot_searching_target);
+                SetWindowText((HWND)f.get_hwnd_noti(), (char *)texts::noti_bot_searching_target);
             }
             
             // select target if any
@@ -54,7 +54,7 @@ unsigned long __stdcall _thread_select_target(void *t) {
                 killed = false;
                 
                 // setting bot status text to attacking
-                SetWindowText(f.get_hwnd_noti(), (char *)texts::noti_bot_attacking_target);
+                SetWindowText((HWND)f.get_hwnd_noti(), (char *)texts::noti_bot_attacking_target);
             }
             
             // rotate cam
@@ -164,8 +164,7 @@ bool flyff::run(bool run) {
             // running target selecting, killing thread
             _vars._h_select_thread = CreateThread(0, 0, _thread_select_target, this, 0, 0);
             // set bot status text to created
-            SendMessage(get_hwnd_noti(), WM_SETTEXT, 0, (LPARAM)texts::noti_bot_created);
-            //SetWindowText(get_hwnd_noti(), (char *));
+            SendMessage((HWND)get_hwnd_noti(), WM_SETTEXT, 0, (LPARAM)texts::noti_bot_created);
         }
         
         return false;
@@ -177,7 +176,7 @@ void flyff::stop() {
     _vars._h_select_thread = nullptr;
     memset(_vars._saved_pos, '\x00', 12);
     // set bot status text to idle
-    SetWindowText(get_hwnd_noti(), (char *)texts::noti_bot_idle);
+    SetWindowText((HWND)get_hwnd_noti(), (char *)texts::noti_bot_idle);
 }
 
 void flyff::set_hwnd(void *hwnd) { _vars._hwnd = hwnd; }
