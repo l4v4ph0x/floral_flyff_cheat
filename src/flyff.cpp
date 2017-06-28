@@ -136,7 +136,7 @@ void flyff::load(void *handle, unsigned long base_addr, unsigned long base_size)
         printf("%08X | Done\n", addr);
         // end of waiting _me_addr to point - }
     } else {
-        error_string = texts::error_wrong_flyff;
+        error_string = (char *)texts::error_wrong_flyff;
     }
 }
 

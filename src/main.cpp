@@ -64,12 +64,13 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 			if (index == 0) {
 				for (i = 0; i < pids.size(); i++) {
                     f = flyff(pids[i]);
-                    if (f.error_string != nullptr) {
+                    if (f.error_string == nullptr) {
                         f.get_local_name(txt_buf);
                         hwnd = GetDlgItem(hDlg, IDC_COMBO_PLAYERS);
                         printf("name: %s\n", txt_buf);
                         SendMessage(hwnd, CB_ADDSTRING, 0, (LPARAM)txt_buf);
-                    }
+					}
+					else printf("error: %s\n", f.error_string);
 				}
 
 				SendMessage(hwnd, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
