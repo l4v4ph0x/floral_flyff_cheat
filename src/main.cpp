@@ -92,6 +92,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 			if (index == 0) {
 				for (i = 0; i < pids.size(); i++) {
                     f = flyff(pids[i]);
+                    
                     if (f.error_string == nullptr) {
                         f.get_local_name(txt_buf);
                         hwnd = GetDlgItem(hDlg, IDC_COMBO_PLAYERS);
@@ -101,15 +102,25 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 					else printf("error: %s\n", f.error_string);
 				}
 
-				SendMessage(hwnd, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
+				if (pids.size() > 0)
+                    SendMessage(hwnd, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
 			} else {
                 int begin, end;
                 double d;
+                bool use;
                 
                 fCurrentTab = fs[index -1];
                 
                 fCurrentTab.get_local_name(txt_buf);
                 printf("loading tab: %s\n", txt_buf);
+                
+                // setting no collision ceckbox
+                hwnd = GetDlgItem(hDlg, IDC_CHECBKOX_NO_COLLISION);
+                use = fCurrentTab.get_no_collision();
+                if (use)
+                    SendMessage(hwnd, BM_SETCHECK, BST_CHECKED, 0);
+                else
+                    SendMessage(hwnd, BM_SETCHECK, BST_UNCHECKED, 0);
                 
                 // hide noti text
                 hwnd = GetDlgItem(hDlg, ID_NOTI);
@@ -191,12 +202,12 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                             
                             fs.push_back(f);
                             printf("Noice!\n");
+                            add_tab(txt_buf, IDD_TAB_FLYFF, (LPARAM)&f);
+                            
                             break;
                         }
                     }
-                    
-					add_tab(txt_buf, IDD_TAB_FLYFF, (LPARAM)&f);
-                    
+                     
 					return true;
 				}
 				case ID_SET_RANGE: {
@@ -316,7 +327,6 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 					return true;
                 }
                 case IDC_CHECBKOX_TELE_TARGET_HOME: {
-                    // get control
                     if (HIWORD(wParam) == BN_CLICKED) {
                         bool checked = SendMessage((HWND)lParam, BM_GETCHECK, 0, 0);
                         hwnd = GetDlgItem(hDlg, IDC_EDIT_TELE_HOME_AFTER_KILLS);
@@ -326,6 +336,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                             fCurrentTab.set_kill_to_home(3);
                             sprintf(txt_buf, "%.0f", fCurrentTab.get_kill_to_home());
                             SetWindowText(hwnd, txt_buf);
+                            SetFocus(hwnd);
                         } else {
                             EnableWindow(hwnd, false);
                             fCurrentTab.set_kill_to_home(0);
@@ -379,6 +390,18 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 					return true;
                 }
+                case IDC_CHECBKOX_NO_COLLISION: {
+                    if (HIWORD(wParam) == BN_CLICKED) {
+                        bool checked = SendMessage((HWND)lParam, BM_GETCHECK, 0, 0);
+                        
+                        if (checked == true)
+                            fCurrentTab.set_no_collision(true);
+                        else
+                            fCurrentTab.set_no_collision(false);
+                    }
+                    
+                    return true;
+                }
                 case ID_NOTI: {
                     unsigned char loc[12];
                     
@@ -394,6 +417,8 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                     }
                     
                     ShowWindow((HWND)lParam, SW_HIDE);
+                    
+                    return true;
                 }
                 
 				break;

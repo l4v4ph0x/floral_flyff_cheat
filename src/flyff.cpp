@@ -123,6 +123,8 @@ void flyff::load(void *handle, unsigned long base_addr, unsigned long base_size)
         _vars._range_addr = base_addr + 0x2A6161;
         _vars._range_all_addr = base_addr + 0x2A654A;
         
+        _vars._no_collision_addr = base_addr + 0x6400BC;
+        
         // { - waiting _select_addr to point
         printf("waiting when _select_addr points ... ");
         for (addr = 0; !addr; Sleep(20))
@@ -329,4 +331,16 @@ void flyff::set_range(float f) {
     
     // set range number
     ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._range_nr_addr), &f, 4, 0);
+}
+
+void flyff::set_no_collision(bool state) {
+    if (state == true)
+        ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._no_collision_addr), "\x00", 1, 0);
+    else
+        ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._no_collision_addr), "\x01", 1, 0);
+}
+bool flyff::get_no_collision() {
+    bool collision;
+    ZwReadVirtualMemory(_vars._handle, (void *)(_vars._no_collision_addr), &collision, 1, 0);
+    return !collision;
 }

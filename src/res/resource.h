@@ -23,6 +23,7 @@
 #define IDC_CHECBKOX_TELE_TARGET_HOME           1014
 #define IDC_EDIT_TELE_HOME_AFTER_KILLS          1015
 
+#define IDC_CHECBKOX_NO_COLLISION               1016
 
 #define ID_NOTI                                 1999
 
