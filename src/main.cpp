@@ -114,6 +114,9 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                 fCurrentTab.get_local_name(txt_buf);
                 printf("loading tab: %s\n", txt_buf);
                 
+                // set bot status hwnd
+                fCurrentTab.set_hwnd_noti(GetDlgItem(hDlg, IDC_STATIC_BOT_STATUS));
+                
                 // setting no collision ceckbox
                 hwnd = GetDlgItem(hDlg, IDC_CHECBKOX_NO_COLLISION);
                 use = fCurrentTab.get_no_collision();
@@ -182,7 +185,6 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 		case WM_COMMAND: {
 			switch (LOWORD(wParam)) {
 				case ID_HOOK: {
-                    
 					hwnd = GetDlgItem(hCurrentTab, IDC_COMBO_PLAYERS);
 					GetWindowTextA(hwnd, txt_buf, sizeof(txt_buf) / sizeof(txt_buf[0]));
 					printf("hook to player: %s\n", txt_buf);

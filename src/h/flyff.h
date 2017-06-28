@@ -40,6 +40,7 @@ class flyff {
         
         // no vars vars
         bool bo_set_range = false;
+        void *hwnd_noti;
         
         void load(void *handle, unsigned long base_addr, unsigned long base_size);
 
@@ -92,6 +93,10 @@ class flyff {
         
         void set_no_collision(bool state);
         bool get_no_collision();
+        
+        
+        void set_hwnd_noti(void *hwnd);
+        void *get_hwnd_noti();
 };
 
 #endif
