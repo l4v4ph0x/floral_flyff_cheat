@@ -12,7 +12,7 @@ unsigned long OFFSET_SELECT = 0x20;             // type = 4 bytes
 unsigned long OFFSET_X = 0x188;                 // type = float
 unsigned long OFFSET_LVL = 0x79C;               // type = 4 bytes
 unsigned long OFFSET_IS_DEAD = 0x900;           // 255 = alive, 6 = dead, type = 1 byte
-unsigned long OFFSET_TYPE_PET = 0x7EC;          // type = 1 byte, 19 = pet
+unsigned long OFFSET_TYPE_PET = 0x7EC;          // type = 1 byte, 19 = pet, 0 = npc, 3 = aibatt
 unsigned long OFFSET_NAME = 0x1890;             // char array
 
 // no class functinos
@@ -236,7 +236,7 @@ flyff::targetInfo flyff::getClosestTargetInView() {
 
         //printf("base: %08X\ntarget: %08X\ntype: %d\nlvl: %d\nis_dead: %d\n", i * 4 + _vars._targetBase_addr, target, type, lvl, is_dead);
         
-		if (type == 18 && lvl >= _vars._target_lvl_begin && lvl <= _vars._target_lvl_end && is_dead == 255 && type_pet != 19) {
+		if (type == 18 && lvl >= _vars._target_lvl_begin && lvl <= _vars._target_lvl_end && is_dead == 255 && type_pet != 19 && type_pet != 0) {
 			targetInfo ti;
 			ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_X), &ti.x, 4, 0);
 			ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_X +4), &ti.y, 4, 0);
