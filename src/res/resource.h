@@ -20,13 +20,18 @@
 #define IDC_EDIT_BTC_ADDR                       1012
 #define IDC_STATIC_BTC_ADDR                     1013
 
+#define IDC_CHECBKOX_TELE_TARGET_HOME           1014
+#define IDC_EDIT_TELE_HOME_AFTER_KILLS          1015
+
+
+#define ID_NOTI                                 1999
 
 // selecting flyff rc
-#define IDD_DIALOG_MAIN                         1014
-#define IDD_TAB_SELECT_FLYFF                    1015
+#define IDD_DIALOG_MAIN                         2001
+#define IDD_TAB_SELECT_FLYFF                    2002
 
-#define IDC_TAB_MAIN                            1016
-#define MSG_ONE                                 1017
-#define IDC_STATIC_SELECT_CLIENT                1018
-#define IDC_COMBO_PLAYERS                       1019
-#define ID_HOOK                                 1020
+#define IDC_TAB_MAIN                            2003
+#define MSG_ONE                                 2004
+#define IDC_STATIC_SELECT_CLIENT                2005
+#define IDC_COMBO_PLAYERS                       2006
+#define ID_HOOK                                 2007

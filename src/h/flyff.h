@@ -48,7 +48,7 @@ class flyff {
 		flyff(void *handle, unsigned long base_addr, unsigned long base_size);
         flyff(unsigned long pid);
         
-        bool run();
+        bool run(bool run = true);
         void stop();
 
         void set_hwnd(void *hwnd);
@@ -78,7 +78,8 @@ class flyff {
         void get_target_lvls(int *begin, int *end);
         
 		void teleport_to_target(unsigned long target);
-		void save_location();
+		void save_location(unsigned char *loc = nullptr);
+        void get_location(unsigned char *loc); // 12 bytes
 		void teleport_to_saved_pos();
         double get_killed_count();
         void set_killed_count(double val);
