@@ -21,6 +21,10 @@ class flyff {
             unsigned long _targetBase_addr;
             unsigned long _me_addr;
             
+            unsigned char _saved_pos[12];
+            double _killed_count;
+            double _kill_to_home;
+            
             unsigned long _target_lvl_begin;
             unsigned long _target_lvl_end;
             
@@ -31,6 +35,9 @@ class flyff {
             std::vector<key> _keys;
             void *_h_select_thread;
         }; vars _vars;
+        
+        // no vars vars
+        bool bo_set_range = false;
         
         void load(void *handle, unsigned long base_addr, unsigned long base_size);
 
@@ -73,6 +80,10 @@ class flyff {
 		void teleport_to_target(unsigned long target);
 		void save_location();
 		void teleport_to_saved_pos();
+        double get_killed_count();
+        void set_killed_count(double val);
+        double get_kill_to_home();
+        void set_kill_to_home(double val);
         
         void set_range(float f);
 };

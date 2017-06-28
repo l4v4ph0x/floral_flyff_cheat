@@ -4,6 +4,7 @@
 class texts {
 	public:
         static const char *error_open_process;
+        static const char *error_wrong_flyff;
 };
 
 #endif
