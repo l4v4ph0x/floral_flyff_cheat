@@ -232,7 +232,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                                 fCurrentTab.set_target_lvls(nr_lvl);
                                 
                                 if (fCurrentTab.run(false))
-                                    show_noti(texts::noti_reenable_bot, 6000);
+                                    show_noti((char *)texts::noti_reenable_bot, 6000);
                             }
                             
 							return true;
@@ -266,7 +266,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                                 fCurrentTab.set_target_lvls(-1, nr_lvl);
                                 
                                 if (fCurrentTab.run(false))
-                                    show_noti(texts::noti_reenable_bot, 6000);
+                                    show_noti((char *)texts::noti_reenable_bot, 6000);
                             }
                             
 							return true;
@@ -294,7 +294,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                         fCurrentTab.addUpdateAttackKey(combo_items[i].val, 100.f);
                         
                         if (fCurrentTab.run(false))
-                            show_noti(texts::noti_reenable_bot, 6000);
+                            show_noti((char *)texts::noti_reenable_bot, 6000);
 					}
 
 					return true;
@@ -333,7 +333,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                         }
                         
                         if (fCurrentTab.run(false))
-                            show_noti(texts::noti_reenable_bot, 6000);
+                            show_noti((char *)texts::noti_reenable_bot, 6000);
                     }
                     
                     return true;
@@ -357,7 +357,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                                 }
                                 
                                 if (fCurrentTab.run(false))
-                                    show_noti(texts::noti_reenable_bot, 6000);
+                                    show_noti((char *)texts::noti_reenable_bot, 6000);
                             }
                             
 							return true;
