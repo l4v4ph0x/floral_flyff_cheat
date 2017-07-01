@@ -94,8 +94,8 @@ flyff::flyff(unsigned long pid) {
         base = get_module(pid, "Neuz.exe", &base_size);
 
         if (base == 0) {
-            // set variables
-            base = 0x00400000; //get_module(pid, "Neuz.exe", &base_size); // get_module does not work on wine staging 2.9
+            // set variables21
+            base = 0x00AB0000; //get_module(pid, "Neuz.exe", &base_size); // get_module does not work on wine staging 2.9
             base_size = 0x00917000; // this and base from immunity debugger
         }
         
@@ -106,14 +106,13 @@ flyff::flyff(unsigned long pid) {
 
 void flyff::load(void *handle, unsigned long base_addr, unsigned long base_size) {
     unsigned long addr;
-    char name[256];
-    
-    ZwReadVirtualMemory(handle, (void *)(base_addr + 0x650F47), &name, 12, 0);
     
     // null some
     _vars._h_select_thread = nullptr;
     
-    if (memcmp("Floral Flyff", name, 12) == 0) {
+	printf("Searcing for flyff ... ");
+    if (search(handle, base_addr, base_size, "Floral Flyff", 12, 1) != 0) {
+		printf("Floral Flyff | Done\n");
         _vars._base_addr = base_addr;
         _vars._handle = handle;
         
