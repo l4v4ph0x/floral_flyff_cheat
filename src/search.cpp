@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <vector>
 
+#define size_to_scan 786
+
 unsigned long get_module(unsigned long pid, char *module_name, unsigned long *size) {
 	void *snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid);
 	MODULEENTRY32 me32;
@@ -31,6 +33,31 @@ std::vector<unsigned long> get_procs(char *name) {
             pids.push_back(pe32.th32ProcessID);
 	
 	return pids;
+}
+
+unsigned long search(void *handle, unsigned long start, unsigned long size, const char *bytesToSearch, unsigned long sizeToSearch, unsigned long step) {
+	unsigned char bytes[size_to_scan];
+	unsigned long gotCount = 0;
+
+	for (unsigned long i = 0; i < size; i += size_to_scan) {
+		ReadProcessMemory(handle, (PVOID)(start + i), &bytes, size_to_scan, 0);
+		for (unsigned short j = 0; j < size_to_scan; j++) {
+			bool failed = false;
+
+			for (unsigned char k = 0; k < sizeToSearch; k++) {
+				if (*(unsigned char *)((unsigned long)&bytes + j + k) != (unsigned char)bytesToSearch[k]) {
+					failed = true;
+					break;
+				}
+			}
+
+			if (failed == false) {
+				gotCount++;
+				if (gotCount == step)
+					return start + i + j;
+			}
+		}
+	} return 0;
 }
 
 struct handle_data {
