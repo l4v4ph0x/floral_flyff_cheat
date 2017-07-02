@@ -96,7 +96,6 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                     if (f.error_string == nullptr) {
                         f.get_local_name(txt_buf);
                         hwnd = GetDlgItem(hDlg, IDC_COMBO_PLAYERS);
-                        printf("name: %s\n", txt_buf);
                         SendMessage(hwnd, CB_ADDSTRING, 0, (LPARAM)txt_buf);
 					}
 					else printf("error: %s\n", f.error_string);
@@ -395,15 +394,22 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                 case IDC_CHECBKOX_NO_COLLISION: {
                     if (HIWORD(wParam) == BN_CLICKED) {
                         bool checked = SendMessage((HWND)lParam, BM_GETCHECK, 0, 0);
-                        
-                        if (checked == true)
-                            fCurrentTab.set_no_collision(true);
-                        else
-                            fCurrentTab.set_no_collision(false);
+                        fCurrentTab.set_no_collision(checked);
                     }
                     
                     return true;
                 }
+				case IDC_CHECBKOX_PERIN_CONVERTER: {
+					if (HIWORD(wParam) == BN_CLICKED) {
+						bool checked = SendMessage((HWND)lParam, BM_GETCHECK, 0, 0);
+						fCurrentTab.set_perin_convert_spam(checked);
+
+						if (fCurrentTab.run(false))
+							show_noti((char *)texts::noti_reenable_bot, 6000);
+					}
+
+					return true;
+				}
                 case ID_NOTI: {
                     unsigned char loc[12];
                     
