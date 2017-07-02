@@ -34,6 +34,10 @@ class flyff {
             
             unsigned long _no_collision_addr;
             
+			bool _use_perin_convert_spam;
+			unsigned long _perin_convert_spam_write_addr;
+			unsigned long _perin_convert_spam_ecx;
+
             std::vector<key> _keys;
             void *_h_select_thread;
         }; vars _vars;
@@ -67,6 +71,7 @@ class flyff {
 		};
         
         void get_local_name(char *name);
+		unsigned int get_local_money();
 
 		void select(unsigned long target);
 		unsigned long getSelect();
@@ -94,7 +99,12 @@ class flyff {
         void set_no_collision(bool state);
         bool get_no_collision();
         
-        
+		void set_perin_convert_spam(bool state);
+		bool get_perin_convert_spam();
+		void init_perin_convert_spam();
+		void enable_perin_convert_spam(bool state);
+
+
         void set_hwnd_noti(void *hwnd);
         void *get_hwnd_noti();
 };

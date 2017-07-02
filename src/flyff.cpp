@@ -14,6 +14,8 @@ unsigned long OFFSET_LVL = 0x79C;               // type = 4 bytes
 unsigned long OFFSET_IS_DEAD = 0x900;           // 255 = alive, 6 = dead, type = 1 byte
 unsigned long OFFSET_TYPE_PET = 0x7EC;          // type = 1 byte, 19 = pet, 0 = npc, 3 = aibatt
 unsigned long OFFSET_NAME = 0x1890;             // char array
+unsigned long OFFSET_ID = 0x3F4;				// 4 byte int
+unsigned long OFFSET_MONEY = 0x1884;			// 5 byte array int
 
 // no class functinos
 unsigned long __stdcall _thread_select_target(void *t) {
@@ -28,6 +30,14 @@ unsigned long __stdcall _thread_select_target(void *t) {
     f.select(0);
     
     for (;; Sleep(100)) {
+		// check does we need to convert to perin
+		if (f.get_perin_convert_spam()) {
+			if (f.get_local_money() >= 100000000)
+				f.enable_perin_convert_spam(true);
+			else f.enable_perin_convert_spam(false);
+		}
+		
+		// deal with killing
         if (f.getSelect() == 0) {
             if (killed == false) {
                 if (f.get_kill_to_home() > 0 && f.get_killed_count() >= f.get_kill_to_home()) {
@@ -106,6 +116,7 @@ flyff::flyff(unsigned long pid) {
 
 void flyff::load(void *handle, unsigned long base_addr, unsigned long base_size) {
     unsigned long addr;
+	char buf[256];
     
     // null some
     _vars._h_select_thread = nullptr;
@@ -128,7 +139,12 @@ void flyff::load(void *handle, unsigned long base_addr, unsigned long base_size)
         _vars._range_all_addr = base_addr + 0x2A654A;
         
         _vars._no_collision_addr = base_addr + 0x6400BC;
+
+		_vars._perin_convert_spam_write_addr = base_addr + 0x249016;
+		_vars._perin_convert_spam_ecx = base_addr + 0x66B608;
         
+		init_perin_convert_spam();
+
         // { - waiting _select_addr to point
         printf("waiting when _select_addr points ... ");
         for (addr = 0; !addr; Sleep(20))
@@ -143,7 +159,12 @@ void flyff::load(void *handle, unsigned long base_addr, unsigned long base_size)
             ZwReadVirtualMemory(_vars._handle, (void *)(_vars._me_addr), &addr, 4, 0);
         printf("%08X | Done\n", addr);
         // end of waiting _me_addr to point - }
-        
+
+		// printing some local vars
+		printf("local money: %d\n", get_local_money());
+		get_local_name(buf);
+		printf("local name: %s\n", buf);
+
         // nulling some vars
         set_kill_to_home(0);
         set_killed_count(0);
@@ -183,6 +204,11 @@ void *flyff::get_hwnd() { return _vars._hwnd; }
 
 void flyff::get_local_name(char *name) {
     ZwReadVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_NAME), &*name, 255, 0);
+}
+unsigned int flyff::get_local_money() {
+	unsigned int money;
+	ZwReadVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_MONEY), &money, 4, 0);
+	return money;
 }
 
 void flyff::select(unsigned long target) {
@@ -343,9 +369,9 @@ void flyff::set_range(float f) {
 
 void flyff::set_no_collision(bool state) {
     if (state == true)
-        ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._no_collision_addr), "\x00", 1, 0);
+        ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._no_collision_addr), "\x00", 1, 0, true);
     else
-        ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._no_collision_addr), "\x01", 1, 0);
+        ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._no_collision_addr), "\x01", 1, 0, true);
 }
 bool flyff::get_no_collision() {
     bool collision;
@@ -353,7 +379,28 @@ bool flyff::get_no_collision() {
     return !collision;
 }
 
+void flyff::set_perin_convert_spam(bool state) {
+	_vars._use_perin_convert_spam = state;
+}
+bool flyff::get_perin_convert_spam() {
+	return _vars._use_perin_convert_spam;
+}
+void flyff::init_perin_convert_spam() {
+	ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._perin_convert_spam_write_addr),
+		"\xEB\x35\x68\xC8\xCC\x00\x00\xB9\x08\xB6\x9A\x00\xE8\x59\x19\x23\x00\xEB\x24\x90", 20, 0);
+	ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._perin_convert_spam_write_addr + 8), &_vars._perin_convert_spam_ecx, 4, 0);
+}
+void flyff::enable_perin_convert_spam(bool state) {
+	unsigned char bytes[2];
 
+	ZwReadVirtualMemory(_vars._handle, (void *)(_vars._perin_convert_spam_write_addr), &bytes, 2, 0);
+
+	if (state == true) {
+		if (memcpy(bytes, "\x90\x90", 2) != 0)
+			ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._perin_convert_spam_write_addr), "\x90\x90", 2, 0, true);
+	} else if (memcpy(bytes, "\xEB\x35", 2) != 0)
+		ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._perin_convert_spam_write_addr), "\xEB\x35", 2, 0, true);
+}
 
 
 

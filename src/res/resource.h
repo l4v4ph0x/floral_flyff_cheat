@@ -27,6 +27,8 @@
 
 #define IDC_STATIC_BOT_STATUS                   1017
 
+#define IDC_CHECBKOX_PERIN_CONVERTER            1018
+
 #define ID_NOTI                                 1999
 
 // selecting flyff rc
