@@ -86,7 +86,6 @@ unsigned long __stdcall _thread_select_target(void *t) {
     return 0;
 }
 
-
 flyff::flyff(void) {}
 
 flyff::flyff(void *handle, unsigned long base_addr, unsigned long base_size) {
@@ -155,8 +154,8 @@ void flyff::load(void *handle, unsigned long base_addr, unsigned long base_size)
         
         // { - waiting _me_addr to point
         printf("waiting when _me_addr points ... ");
-        for (addr = 0; !addr; Sleep(20))
-            ZwReadVirtualMemory(_vars._handle, (void *)(_vars._me_addr), &addr, 4, 0);
+		for (addr = 0; !addr; Sleep(20))
+			addr = getMe();
         printf("%08X | Done\n", addr);
         // end of waiting _me_addr to point - }
 
@@ -387,8 +386,8 @@ bool flyff::get_perin_convert_spam() {
 }
 void flyff::init_perin_convert_spam() {
 	ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._perin_convert_spam_write_addr),
-		"\xEB\x35\x68\xC8\xCC\x00\x00\xB9\x08\xB6\x9A\x00\xE8\x59\x19\x23\x00\xEB\x24\x90", 20, 0);
-	ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._perin_convert_spam_write_addr + 8), &_vars._perin_convert_spam_ecx, 4, 0);
+		"\xEB\x35\x68\xC8\xCC\x00\x00\xB9\x08\xB6\x9A\x00\xE8\x59\x19\x23\x00\xEB\x24\x90", 20, 0, true);
+	ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._perin_convert_spam_write_addr + 8), &_vars._perin_convert_spam_ecx, 4, 0, true);
 }
 void flyff::enable_perin_convert_spam(bool state) {
 	unsigned char bytes[2];

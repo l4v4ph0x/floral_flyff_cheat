@@ -61,6 +61,12 @@ unsigned long __stdcall _thread_hide_noti(void *t) {
     return 0;
 }
 
+unsigned long __stdcall _thread_if_connected(void *t) {
+	item_thread_if_connected item = *(item_thread_if_connected *)t;
+
+
+}
+
 void show_noti(char *txt, unsigned int miliseconds) {
     HWND hwnd;
     
