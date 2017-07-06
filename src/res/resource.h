@@ -25,9 +25,10 @@
 
 #define IDC_CHECBKOX_NO_COLLISION               1016
 
-#define IDC_STATIC_BOT_STATUS                   1017
+#define ID_CLOSE_TAB							1017
+#define IDC_STATIC_BOT_STATUS                   1018
 
-#define IDC_CHECBKOX_PERIN_CONVERTER            1018
+#define IDC_CHECBKOX_PERIN_CONVERTER            1019
 
 #define ID_NOTI                                 1999
 

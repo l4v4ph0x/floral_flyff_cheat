@@ -141,8 +141,6 @@ void flyff::load(void *handle, unsigned long base_addr, unsigned long base_size)
 
 		_vars._perin_convert_spam_write_addr = base_addr + 0x249016;
 		_vars._perin_convert_spam_ecx = base_addr + 0x66B608;
-        
-		init_perin_convert_spam();
 
         // { - waiting _select_addr to point
         printf("waiting when _select_addr points ... ");

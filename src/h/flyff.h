@@ -50,6 +50,10 @@ class flyff {
 
 	public:
         char *error_string;
+
+		// varrs
+		void *hwnd_tab;
+
         
 		flyff(void);
 		flyff(void *handle, unsigned long base_addr, unsigned long base_size);

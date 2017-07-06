@@ -12,7 +12,7 @@
 #include "res/values.h"
 
 // controller vars
-std::vector<flyff> fs;
+std::vector<flyff *> fs;
 
 unsigned int when_close_noti;
 
@@ -23,7 +23,7 @@ char windowName[] = "Floral Flyff";
 HWND hTabControl; // tab control handle
 HWND hCurrentTab; // tab dialog handle
 int tabCount;
-flyff fCurrentTab;
+flyff *fCurrentTab;
 
 INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -41,6 +41,17 @@ void add_tab(char *title, unsigned int tab, LPARAM lParam = 0) {
 
 	EndDialog(hCurrentTab, 0);
 	hCurrentTab = CreateDialog(HIthis, MAKEINTRESOURCE(tab), hTabControl, TabDialogProc);
+}
+
+void close_tab(unsigned int index) {
+	// kill tab
+	TabCtrl_DeleteItem(hTabControl, index + 1);
+	free(fs[index]);
+	fs.erase(fs.begin() + index - 1);
+
+	if (index + 2 >= tabCount)
+		SendMessage(hTabControl, TCM_SETCURFOCUS, index, 0);
+	else SendMessage(hTabControl, TCM_SETCURFOCUS, index + 1, 0);
 }
 
 unsigned long __stdcall _thread_hide_noti(void *t) {
@@ -62,9 +73,18 @@ unsigned long __stdcall _thread_hide_noti(void *t) {
 }
 
 unsigned long __stdcall _thread_if_connected(void *t) {
-	item_thread_if_connected item = *(item_thread_if_connected *)t;
+	unsigned int index = *(unsigned int *)t -2;
 
+	for (;; Sleep(1000)) {
+		//printf("%d %08X\n", index, fs[index].getMe());
 
+		if (!fs[index]->getMe())
+			break;
+	}
+
+	close_tab(index);
+	
+	return 0;
 }
 
 void show_noti(char *txt, unsigned int miliseconds) {
@@ -84,7 +104,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
     char newbuf[256];
     std::vector<unsigned long> pids;
     int index, i;
-    flyff f;
+    flyff *f;
     
 	switch (uMsg) {
 		case WM_INITDIALOG: {
@@ -97,14 +117,16 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 			// if tab is select flyff
 			if (index == 0) {
 				for (i = 0; i < pids.size(); i++) {
-                    f = flyff(pids[i]);
+                    f = new flyff(pids[i]);
                     
-                    if (f.error_string == nullptr) {
-                        f.get_local_name(txt_buf);
+                    if (f->error_string == nullptr) {
+                        f->get_local_name(txt_buf);
                         hwnd = GetDlgItem(hDlg, IDC_COMBO_PLAYERS);
                         SendMessage(hwnd, CB_ADDSTRING, 0, (LPARAM)txt_buf);
 					}
-					else printf("error: %s\n", f.error_string);
+					else printf("error: %s\n", f->error_string);
+
+					free(f);
 				}
 
 				if (pids.size() > 0)
@@ -116,15 +138,15 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                 
                 fCurrentTab = fs[index -1];
                 
-                fCurrentTab.get_local_name(txt_buf);
+                fCurrentTab->get_local_name(txt_buf);
                 printf("loading tab: %s\n", txt_buf);
                 
                 // set bot status hwnd
-                fCurrentTab.set_hwnd_noti(GetDlgItem(hDlg, IDC_STATIC_BOT_STATUS));
+                fCurrentTab->set_hwnd_noti(GetDlgItem(hDlg, IDC_STATIC_BOT_STATUS));
                 
                 // setting no collision ceckbox
                 hwnd = GetDlgItem(hDlg, IDC_CHECBKOX_NO_COLLISION);
-                use = fCurrentTab.get_no_collision();
+                use = fCurrentTab->get_no_collision();
                 if (use)
                     SendMessage(hwnd, BM_SETCHECK, BST_CHECKED, 0);
                 else
@@ -135,7 +157,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                 ShowWindow(hwnd, SW_HIDE);
                 
                 // load tele to target and back home
-                d = fCurrentTab.get_kill_to_home();
+                d = fCurrentTab->get_kill_to_home();
                 if (d == 0) {
                     // uncheck checkbox and edittext
                     hwnd = GetDlgItem(hDlg, IDC_CHECBKOX_TELE_TARGET_HOME);
@@ -149,7 +171,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                 SetWindowText(hwnd, STR_ENABLE_TARGET);
 
                 // set target levels range
-                fCurrentTab.get_target_lvls(&begin, &end);
+                fCurrentTab->get_target_lvls(&begin, &end);
                     // set begin one
                     sprintf(txt_buf, "%d", begin);
                     hwnd = GetDlgItem(hDlg, IDC_EDIT_TARGET_LVL_BEGIN);
@@ -167,9 +189,9 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                 
                 flyff::key k;
                 
-                if (!fCurrentTab.getKey(&k)) {
+                if (!fCurrentTab->getKey(&k)) {
                     SendMessage(hwnd, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
-                    fCurrentTab.addUpdateAttackKey(combo_items[0].val, 100.f);
+                    fCurrentTab->addUpdateAttackKey(combo_items[0].val, 100.f);
                 } else {
                     for (i = 0; i < sizeof(combo_items) / sizeof(comboItem); i++) {
                         if (combo_items[i].val == k.code) {
@@ -198,19 +220,23 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                     
                     // adding new flyff class
                     for (i = 0; i < pids.size(); i++) {
-                        f = flyff(pids[i]);
-                        f.get_local_name(newbuf);
+                        f = new flyff(pids[i]);
+                        f->get_local_name(newbuf);
                         
                         if (strcmp(txt_buf, newbuf) == 0) {
                             // set default target levels range
-                            f.set_target_lvls(1, 400);
+                            f->set_target_lvls(1, 400);
                             // set flyff window handle
-                            f.set_hwnd((void *)find_main_window(pids[i]));
-                            
+                            f->set_hwnd((void *)find_main_window(pids[i]));
+							// init perin convert function(write to flyff)
+							f->init_perin_convert_spam();
+
                             fs.push_back(f);
                             printf("Noice!\n");
                             add_tab(txt_buf, IDD_TAB_FLYFF, (LPARAM)&f);
-                            
+
+							CreateThread(0, 0, _thread_if_connected, &tabCount, 0, 0);
+
                             break;
                         }
                     }
@@ -231,7 +257,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 					printf(txt_buf);
 
 					// set range and change edittext value of converted val
-					fCurrentTab.set_range(nr_range);
+					fCurrentTab->set_range(nr_range);
 					SetWindowText(hwnd, txt_buf);
 
 					return true;
@@ -243,13 +269,13 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 							GetWindowTextA((HWND)lParam, txt_buf, sizeof(txt_buf) / sizeof(txt_buf[0]));
 							nr_lvl = atoi(txt_buf);
-							fCurrentTab.get_target_lvls(&begin, &end);
+							fCurrentTab->get_target_lvls(&begin, &end);
                             
                             // if really changed, then only change in class too
                             if (nr_lvl != begin) {
-                                fCurrentTab.set_target_lvls(nr_lvl);
+                                fCurrentTab->set_target_lvls(nr_lvl);
                                 
-                                if (fCurrentTab.run(false))
+                                if (fCurrentTab->run(false))
                                     show_noti((char *)texts::noti_reenable_bot, 6000);
                             }
                             
@@ -258,7 +284,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 						case EN_KILLFOCUS: {
 							int begin, end;
 
-							fCurrentTab.get_target_lvls(&begin, &end);
+							fCurrentTab->get_target_lvls(&begin, &end);
 							sprintf(txt_buf, "%d", begin);
 							SetWindowText((HWND)lParam, txt_buf);
 
@@ -277,13 +303,13 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 							GetWindowTextA((HWND)lParam, txt_buf, sizeof(txt_buf) / sizeof(txt_buf[0]));
 							nr_lvl = atoi(txt_buf);
-                            fCurrentTab.get_target_lvls(&begin, &end);
+                            fCurrentTab->get_target_lvls(&begin, &end);
                             
                             // if really changed, then only change in class too
                             if (nr_lvl != end) {
-                                fCurrentTab.set_target_lvls(-1, nr_lvl);
+                                fCurrentTab->set_target_lvls(-1, nr_lvl);
                                 
-                                if (fCurrentTab.run(false))
+                                if (fCurrentTab->run(false))
                                     show_noti((char *)texts::noti_reenable_bot, 6000);
                             }
                             
@@ -292,7 +318,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 						case EN_KILLFOCUS: {
 							int begin, end;
 
-							fCurrentTab.get_target_lvls(&begin, &end);
+							fCurrentTab->get_target_lvls(&begin, &end);
 							sprintf(txt_buf, "%d", end);
 							SetWindowText((HWND)lParam, txt_buf);
 
@@ -309,9 +335,9 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 						i = SendMessage((HWND)lParam, (UINT)CB_GETCURSEL, (WPARAM)0, (LPARAM)0);
 
 						printf("%s %x\n", combo_items[i].name, combo_items[i].val);
-                        fCurrentTab.addUpdateAttackKey(combo_items[i].val, 100.f);
+                        fCurrentTab->addUpdateAttackKey(combo_items[i].val, 100.f);
                         
-                        if (fCurrentTab.run(false))
+                        if (fCurrentTab->run(false))
                             show_noti((char *)texts::noti_reenable_bot, 6000);
 					}
 
@@ -321,11 +347,11 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 					// get control
 					hwnd = GetDlgItem(hDlg, ID_TARGET_ENABLE);
 
-					if (fCurrentTab.run() == false) {
+					if (fCurrentTab->run() == false) {
 						// set window text to disable target selector
 						SetWindowText(hwnd, STR_DISABLE_TARGET);
 					} else {
-						fCurrentTab.stop();
+						fCurrentTab->stop();
 
 						// set windw text to enable target selector
 						SetWindowText(hwnd, STR_ENABLE_TARGET);
@@ -340,17 +366,17 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                         
                         if (checked == true) {
                             EnableWindow(hwnd, true);
-                            fCurrentTab.set_kill_to_home(3);
-                            sprintf(txt_buf, "%.0f", fCurrentTab.get_kill_to_home());
+                            fCurrentTab->set_kill_to_home(3);
+                            sprintf(txt_buf, "%.0f", fCurrentTab->get_kill_to_home());
                             SetWindowText(hwnd, txt_buf);
                             SetFocus(hwnd);
                         } else {
                             EnableWindow(hwnd, false);
-                            fCurrentTab.set_kill_to_home(0);
+                            fCurrentTab->set_kill_to_home(0);
                             SetWindowText(hwnd, "");
                         }
                         
-                        if (fCurrentTab.run(false))
+                        if (fCurrentTab->run(false))
                             show_noti((char *)texts::noti_reenable_bot, 6000);
                     }
                     
@@ -365,26 +391,26 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 							GetWindowTextA((HWND)lParam, txt_buf, sizeof(txt_buf) / sizeof(txt_buf[0]));
 							fl = atof(txt_buf);
 							
-                            if (fl != fCurrentTab.get_kill_to_home()) {
+                            if (fl != fCurrentTab->get_kill_to_home()) {
                                 if (fl <= 0) {
-                                    fCurrentTab.set_kill_to_home(0);
+                                    fCurrentTab->set_kill_to_home(0);
                                     SendMessage(hwnd, BM_SETCHECK, BST_UNCHECKED, 0);
                                 } else {
-                                    fCurrentTab.set_kill_to_home(fl);
+                                    fCurrentTab->set_kill_to_home(fl);
                                     SendMessage(hwnd, BM_SETCHECK, BST_CHECKED, 0);
                                 }
                                 
-                                if (fCurrentTab.run(false))
+                                if (fCurrentTab->run(false))
                                     show_noti((char *)texts::noti_reenable_bot, 6000);
                             }
                             
 							return true;
                         }
 						case EN_KILLFOCUS: {
-							sprintf(txt_buf, "%.0f", fCurrentTab.get_kill_to_home());
+							sprintf(txt_buf, "%.0f", fCurrentTab->get_kill_to_home());
 							SetWindowText((HWND)lParam, txt_buf);
 
-                            if (fCurrentTab.get_kill_to_home() == 0) {
+                            if (fCurrentTab->get_kill_to_home() == 0) {
                                 EnableWindow((HWND)lParam, false);
                                 SetWindowText((HWND)lParam, "");
                             }
@@ -400,17 +426,20 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                 case IDC_CHECBKOX_NO_COLLISION: {
                     if (HIWORD(wParam) == BN_CLICKED) {
                         bool checked = SendMessage((HWND)lParam, BM_GETCHECK, 0, 0);
-                        fCurrentTab.set_no_collision(checked);
+                        fCurrentTab->set_no_collision(checked);
                     }
                     
                     return true;
                 }
+				case ID_CLOSE_TAB: {
+					close_tab(TabCtrl_GetCurFocus(hTabControl) -1);
+				}
 				case IDC_CHECBKOX_PERIN_CONVERTER: {
 					if (HIWORD(wParam) == BN_CLICKED) {
 						bool checked = SendMessage((HWND)lParam, BM_GETCHECK, 0, 0);
-						fCurrentTab.set_perin_convert_spam(checked);
+						fCurrentTab->set_perin_convert_spam(checked);
 
-						if (fCurrentTab.run(false))
+						if (fCurrentTab->run(false))
 							show_noti((char *)texts::noti_reenable_bot, 6000);
 					}
 
@@ -422,12 +451,12 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                     GetWindowTextA((HWND)lParam, txt_buf, sizeof(txt_buf) / sizeof(txt_buf[0]));
                     
                     if (strcmp(texts::noti_reenable_bot, txt_buf) == 0) {
-                        fCurrentTab.get_location(loc);
+                        fCurrentTab->get_location(loc);
                         
                         // noti wants to reeable bot
-                        fCurrentTab.stop();
-                        fCurrentTab.save_location(loc);
-                        fCurrentTab.run();
+                        fCurrentTab->stop();
+                        fCurrentTab->save_location(loc);
+                        fCurrentTab->run();
                     }
                     
                     ShowWindow((HWND)lParam, SW_HIDE);
@@ -473,7 +502,7 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 		case WM_NOTIFY: {
 			switch (((LPNMHDR)lParam)->code) {
 				case TCN_SELCHANGE: {
-					int index;
+					unsigned int index;
 
 					EndDialog(hCurrentTab, 0);
 					index = TabCtrl_GetCurFocus(hTabControl);
