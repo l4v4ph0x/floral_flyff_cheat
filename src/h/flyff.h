@@ -43,14 +43,15 @@ class flyff {
         }; vars _vars;
         
         // no vars vars
-        bool bo_set_range = false;
+        bool bo_set_range;
         void *hwnd_noti;
         
         void load(void *handle, unsigned long base_addr, unsigned long base_size);
 
 	public:
         char *error_string;
-        
+        bool thread_uing;
+
 		flyff(void);
 		flyff(void *handle, unsigned long base_addr, unsigned long base_size);
         flyff(unsigned long pid);

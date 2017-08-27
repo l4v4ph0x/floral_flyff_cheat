@@ -8,14 +8,18 @@
 #include <vector>
 #include <cmath>
 
+// courius adds
+//Neuz.exe + 5E5490, makes most of items very big, 
+//    so to bot make this float val to 0and just run autoclicker on screen because targets are mega big
+
 unsigned long OFFSET_SELECT = 0x20;             // type = 4 bytes
 unsigned long OFFSET_X = 0x188;                 // type = float
-unsigned long OFFSET_LVL = 0x79C;               // type = 4 bytes
-unsigned long OFFSET_IS_DEAD = 0x900;           // 255 = alive, 6 = dead, type = 1 byte
-unsigned long OFFSET_TYPE_PET = 0x7EC;          // type = 1 byte, 19 = pet, 0 = npc, 3 = aibatt
-unsigned long OFFSET_NAME = 0x1890;             // char array
+unsigned long OFFSET_LVL = 0x79C + 8;           // type = 4 bytes
+unsigned long OFFSET_IS_DEAD = 0x900 + 8;       // 255 = alive, 6 = dead, type = 1 byte
+unsigned long OFFSET_TYPE_PET = 0x7EC + 8;      // type = 1 byte, 19 = pet, 0 = npc, 3 = aibatt
+unsigned long OFFSET_NAME = 0x1890 + 8;         // char array
 unsigned long OFFSET_ID = 0x3F4;				// 4 byte int
-unsigned long OFFSET_MONEY = 0x1884;			// 5 byte array int
+unsigned long OFFSET_MONEY = 0x1884 + 8;		// 5 byte array int
 
 // no class functinos
 unsigned long __stdcall _thread_select_target(void *t) {
@@ -68,17 +72,21 @@ unsigned long __stdcall _thread_select_target(void *t) {
             }
             
             // rotate cam
+			f.thread_uing = true;
             PostMessage((HWND)f.get_hwnd(), WM_KEYDOWN, VK_RIGHT, MapVirtualKey(VK_RIGHT, MAPVK_VK_TO_VSC));
             Sleep(50);
             PostMessage((HWND)f.get_hwnd(), WM_KEYUP, VK_RIGHT, MapVirtualKey(VK_RIGHT, MAPVK_VK_TO_VSC));
+			f.thread_uing = false;
         } else {
             // get key to use
             if (f.getKey(&k)) {
                 // send key to window
+				f.thread_uing = true;
                 Sleep(20);
                 PostMessage((HWND)f.get_hwnd(), WM_KEYDOWN, k.code, MapVirtualKey(k.code, MAPVK_VK_TO_VSC));
                 Sleep(50);
                 PostMessage((HWND)f.get_hwnd(), WM_KEYUP, k.code, MapVirtualKey(k.code, MAPVK_VK_TO_VSC));
+				f.thread_uing = false;
             }
         }
     }
@@ -126,23 +134,31 @@ void flyff::load(void *handle, unsigned long base_addr, unsigned long base_size)
         _vars._base_addr = base_addr;
         _vars._handle = handle;
         
+        // updated 8.26.2017
+        _vars._select_addr = base_addr + 0x66EE04; // old 0x66EDE4(dif: +20)
+		// updated 8.26.2017
+        _vars._maxInView_addr = base_addr + 0x668D88 + 0x20;
+		// updated 8.26.2017
+        _vars._targetBase_addr = base_addr + 0x65E5F0 + 0x20;
+		// updated 8.26.2017
+        _vars._me_addr = base_addr + 0x659A48 + 0x20;
         
-        _vars._select_addr = base_addr + 0x66EDE4;
-        _vars._maxInView_addr = base_addr + 0x668D88;
-        _vars._targetBase_addr = base_addr + 0x65E5F0;
-        _vars._me_addr = base_addr + 0x659A48;
+        // updated 8.27.2017
+        _vars._range_nr_addr = base_addr + 0x00FC7AFC - 0x00980000; // old 0x66FDA0
+		// updated 8.26.2017
+        _vars._range_addr = base_addr + 0x2A62B1; //old 0x2A6161(dif: +150)
+		// updated 8.26.2017
+        _vars._range_all_addr = base_addr + 0x2A654A + 0x150;
         
-        
-        _vars._range_nr_addr = base_addr + 0x66FDA0;
-        _vars._range_addr = base_addr + 0x2A6161;
-        _vars._range_all_addr = base_addr + 0x2A654A;
-        
-        _vars._no_collision_addr = base_addr + 0x6400BC;
+		// update 8.27.2017
+        _vars._no_collision_addr = base_addr + 0xFC00BC - 0x00980000; // old 0x6400BC
 
+		/* need update
 		_vars._perin_convert_spam_write_addr = base_addr + 0x249016;
 		_vars._perin_convert_spam_ecx = base_addr + 0x66B608;
         
 		init_perin_convert_spam();
+		*/
 
         // { - waiting _select_addr to point
         printf("waiting when _select_addr points ... ");
@@ -190,6 +206,8 @@ bool flyff::run(bool run) {
     } return true;
 }
 void flyff::stop() {
+	// waiting for thread to finish all keypresses
+	for (; thread_uing; Sleep(50));
     // terminating target selecting and killing thread and nulling vars
     TerminateThread(_vars._h_select_thread, 0);
     _vars._h_select_thread = nullptr;
