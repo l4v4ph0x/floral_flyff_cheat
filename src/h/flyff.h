@@ -40,6 +40,7 @@ class flyff {
 
             std::vector<key> _keys;
             void *_h_select_thread;
+			void * h_perin_converter;
         }; vars _vars;
         
         // no vars vars

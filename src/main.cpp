@@ -142,7 +142,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                 printf("loading tab: %s\n", txt_buf);
                 
 				// disabling perin converter(need update, need to search hdd and get patterns)
-				EnableWindow(GetDlgItem(hDlg, IDC_CHECBKOX_PERIN_CONVERTER), false);
+				//EnableWindow(GetDlgItem(hDlg, IDC_CHECBKOX_PERIN_CONVERTER), false);
 
                 // set bot status hwnd
                 fCurrentTab->set_hwnd_noti(GetDlgItem(hDlg, IDC_STATIC_BOT_STATUS));

@@ -34,13 +34,6 @@ unsigned long __stdcall _thread_select_target(void *t) {
     f.select(0);
     
     for (;; Sleep(100)) {
-		// check does we need to convert to perin
-		if (f.get_perin_convert_spam()) {
-			if (f.get_local_money() >= 100000000)
-				f.enable_perin_convert_spam(true);
-			else f.enable_perin_convert_spam(false);
-		}
-		
 		// deal with killing
         if (f.getSelect() == 0) {
             if (killed == false) {
@@ -93,6 +86,23 @@ unsigned long __stdcall _thread_select_target(void *t) {
     
     return 0;
 }
+
+unsigned long __stdcall _thread_perin_converter(void *t) {
+    flyff f;
+
+    f = *((flyff *)t); // main class for every client
+
+	for (;; Sleep(1000)) {
+		// check does we need to convert to perin
+		//if (f.get_perin_convert_spam()) { // no need to check since 9.2.2017
+			if (f.get_local_money() >= 100000000)
+				f.enable_perin_convert_spam(true);
+			else f.enable_perin_convert_spam(false);
+		//}
+	}
+}
+
+// end of no class functinos
 
 flyff::flyff(void) {}
 
@@ -153,12 +163,13 @@ void flyff::load(void *handle, unsigned long base_addr, unsigned long base_size)
 		// update 8.27.2017
         _vars._no_collision_addr = base_addr + 0xFC00BC - 0x00980000; // old 0x6400BC
 
-		/* need update
-		_vars._perin_convert_spam_write_addr = base_addr + 0x249016;
-		_vars._perin_convert_spam_ecx = base_addr + 0x66B608;
+		// updated 9.2.2017
+		_vars._perin_convert_spam_write_addr = base_addr + 0x249096; // old 0x249016(dif: +80)
+		// updated 9.2.2017
+		_vars._perin_convert_spam_ecx = base_addr + 0x66B628; // old 0x66B608(dif: +20)
         
 		init_perin_convert_spam();
-		*/
+		
 
         // { - waiting _select_addr to point
         printf("waiting when _select_addr points ... ");
@@ -398,13 +409,22 @@ bool flyff::get_no_collision() {
 
 void flyff::set_perin_convert_spam(bool state) {
 	_vars._use_perin_convert_spam = state;
+
+	if (state)
+		// make thread to check penya nad convert if needed
+        _vars.h_perin_converter = CreateThread(0, 0, _thread_perin_converter, this, 0, 0);
+	else
+		// kill thread if checkbox is unchecked
+		TerminateThread(_vars._h_select_thread, 0);
 }
 bool flyff::get_perin_convert_spam() {
 	return _vars._use_perin_convert_spam;
 }
 void flyff::init_perin_convert_spam() {
 	ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._perin_convert_spam_write_addr),
-		"\xEB\x35\x68\xC8\xCC\x00\x00\xB9\x08\xB6\x9A\x00\xE8\x59\x19\x23\x00\xEB\x24\x90", 20, 0, true);
+		// old "\xEB\x35\x68\xC8\xCC\x00\x00\xB9\x08\xB6\x9A\x00\xE8\x59\x19\x23\x00\xEB\x24\x90", 20, 0, true);
+		// updated 9.2.2017
+		"\xEB\x35\x68\xC8\xCC\x00\x00\xB9\x08\xB6\x9A\x00\xE8\x29\x1A\x23\x00\xEB\x24\x90", 20, 0, true);
 	ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._perin_convert_spam_write_addr + 8), &_vars._perin_convert_spam_ecx, 4, 0, true);
 }
 void flyff::enable_perin_convert_spam(bool state) {
