@@ -297,7 +297,7 @@ flyff::targetInfo flyff::getClosestTargetInView() {
     
     maxInView = 0;
     closest_ti = targetInfo();
-	closest_ti.hyp = 99999999;
+	closest_ti.hyp = 99999999.f;
 
 	ZwReadVirtualMemory(_vars._handle, (void *)(_vars._maxInView_addr), &maxInView, 4, 0);
     
