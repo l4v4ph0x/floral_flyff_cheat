@@ -204,6 +204,21 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                     }
                     
                 }
+
+				// load perin converter checkbox
+				hwnd = GetDlgItem(hDlg, IDC_CHECBKOX_PERIN_CONVERTER);
+                use = fCurrentTab->get_perin_convert_spam();
+                if (use)
+                    SendMessage(hwnd, BM_SETCHECK, BST_CHECKED, 0);
+                else
+                    SendMessage(hwnd, BM_SETCHECK, BST_UNCHECKED, 0);
+
+				// load reselect target after seconds
+				hwnd = GetDlgItem(hDlg, IDC_EDIT_RESELECT_AFTER);
+				sprintf(txt_buf, "%d", fCurrentTab->get_reselect_after());
+				SetWindowText(hwnd, txt_buf);
+
+
                 // setting toolstips(balloon versions)
                 //gToolTip::AddTip(hCurrentTab, HIthis, "Enter desired range number(in float). Ex: 100", IDC_EDIT_RANGE, true);
                 //gToolTip::AddTip(hTabControl, HIthis, "Enter desired lowest level to select. Ex: 1", IDC_EDIT_TARGET_LVL_BEGIN, true);
@@ -242,9 +257,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
                             break;
                         }
-                    }
-                     
-					return true;
+					} break;
 				}
 				case ID_SET_RANGE: {
 					float nr_range;
@@ -257,13 +270,13 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 					// convert it to float and then print it out
 					nr_range = atof(txt_buf);
 					sprintf(txt_buf, "%f\n", nr_range);
-					printf(txt_buf);
+					printf("setting range to: %s", txt_buf);
 
 					// set range and change edittext value of converted val
 					fCurrentTab->set_range(nr_range);
 					SetWindowText(hwnd, txt_buf);
 
-					return true;
+					break;
                 }
 				case IDC_EDIT_TARGET_LVL_BEGIN: {
 					switch (HIWORD(wParam)) {
@@ -280,9 +293,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                                 
                                 if (fCurrentTab->run(false))
                                     show_noti((char *)texts::noti_reenable_bot, 6000);
-                            }
-                            
-							return true;
+							} break;
                         }
 						case EN_KILLFOCUS: {
 							int begin, end;
@@ -291,13 +302,9 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 							sprintf(txt_buf, "%d", begin);
 							SetWindowText((HWND)lParam, txt_buf);
 
-							return true;
-                        }
-                        
-                        break;
-					}
-
-					return true;
+							break;
+                        } break;
+					} break;
                 }
 				case IDC_EDIT_TARGET_LVL_END: {
 					switch (HIWORD(wParam)) {
@@ -314,9 +321,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                                 
                                 if (fCurrentTab->run(false))
                                     show_noti((char *)texts::noti_reenable_bot, 6000);
-                            }
-                            
-							return true;
+							} break;
                         }
 						case EN_KILLFOCUS: {
 							int begin, end;
@@ -325,13 +330,9 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 							sprintf(txt_buf, "%d", end);
 							SetWindowText((HWND)lParam, txt_buf);
 
-							return true;
-                        }
-                        
-                        break;
-					}
-
-					return true;
+							break;
+                        } break;
+					} break;
                 }
                 case IDC_COMBO_KEYS: {
 					if (HIWORD(wParam) == CBN_SELCHANGE) {
@@ -342,9 +343,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                         
                         if (fCurrentTab->run(false))
                             show_noti((char *)texts::noti_reenable_bot, 6000);
-					}
-
-					return true;
+					} break;
                 }
                 case ID_TARGET_ENABLE: {
 					// get control
@@ -358,9 +357,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 						// set windw text to enable target selector
 						SetWindowText(hwnd, STR_ENABLE_TARGET);
-					}
-
-					return true;
+					} break;
                 }
                 case IDC_CHECBKOX_TELE_TARGET_HOME: {
                     if (HIWORD(wParam) == BN_CLICKED) {
@@ -381,9 +378,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                         
                         if (fCurrentTab->run(false))
                             show_noti((char *)texts::noti_reenable_bot, 6000);
-                    }
-                    
-                    return true;
+					} break;
                 }
                 case IDC_EDIT_TELE_HOME_AFTER_KILLS: {
                     switch (HIWORD(wParam)) {
@@ -405,9 +400,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                                 
                                 if (fCurrentTab->run(false))
                                     show_noti((char *)texts::noti_reenable_bot, 6000);
-                            }
-                            
-							return true;
+							} break;
                         }
 						case EN_KILLFOCUS: {
 							sprintf(txt_buf, "%.0f", fCurrentTab->get_kill_to_home());
@@ -416,23 +409,15 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                             if (fCurrentTab->get_kill_to_home() == 0) {
                                 EnableWindow((HWND)lParam, false);
                                 SetWindowText((HWND)lParam, "");
-                            }
-                            
-							return true;
-                        }
-                        
-                        break;
-					}
-
-					return true;
+							} break;
+                        } break;
+					} break;
                 }
                 case IDC_CHECBKOX_NO_COLLISION: {
                     if (HIWORD(wParam) == BN_CLICKED) {
                         bool checked = SendMessage((HWND)lParam, BM_GETCHECK, 0, 0);
                         fCurrentTab->set_no_collision(checked);
-                    }
-                    
-                    return true;
+					} break;
                 }
 				case ID_CLOSE_TAB: {
 					close_tab(TabCtrl_GetCurFocus(hTabControl) -1);
@@ -444,9 +429,34 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 						if (fCurrentTab->run(false))
 							show_noti((char *)texts::noti_reenable_bot, 6000);
-					}
+					} break;
+				}
+				case IDC_EDIT_RESELECT_AFTER: {
+					switch (HIWORD(wParam)) {
+						case EN_CHANGE: {
+							int begin;
 
-					return true;
+							GetWindowTextA((HWND)lParam, txt_buf, sizeof(txt_buf) / sizeof(txt_buf[0]));
+							begin = atoi(txt_buf);
+
+							// if really changed, then only change in class too
+							if (fCurrentTab->get_reselect_after() != begin) {
+								fCurrentTab->set_reselect_after(begin);
+
+								if (fCurrentTab->run(false))
+									show_noti((char *)texts::noti_reenable_bot, 6000);
+							} break;
+						}
+						case EN_KILLFOCUS: {
+							int begin;
+
+							begin = fCurrentTab->get_reselect_after();
+							sprintf(txt_buf, "%d", begin);
+							SetWindowText((HWND)lParam, txt_buf);
+
+							break;
+						}
+					} break;
 				}
                 case ID_NOTI: {
                     unsigned char loc[12];
@@ -463,17 +473,12 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                     }
                     
                     ShowWindow((HWND)lParam, SW_HIDE);
-                    
-                    return true;
-                }
-                
-				break;
-			}
-			
-			return true;
+                    break;
+                } break;
+			} break;
 		}
 		
-        break;
+		return true;
 	}
 	
 	return false;

@@ -30,6 +30,9 @@
 
 #define IDC_CHECBKOX_PERIN_CONVERTER            1019
 
+#define IDC_STATIC_RESELECT_AFTER				1020
+#define IDC_EDIT_RESELECT_AFTER					1021
+
 #define ID_NOTI                                 1999
 
 // selecting flyff rc
