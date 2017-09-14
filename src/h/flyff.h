@@ -38,6 +38,8 @@ class flyff {
 			unsigned long _perin_convert_spam_write_addr;
 			unsigned long _perin_convert_spam_ecx;
 
+			int reselect_after;
+
             std::vector<key> _keys;
             void *_h_select_thread;
 			void * h_perin_converter;
@@ -108,6 +110,8 @@ class flyff {
 		void init_perin_convert_spam();
 		void enable_perin_convert_spam(bool state);
 
+		void set_reselect_after(int seconds);
+		int get_reselect_after();
 
         void set_hwnd_noti(void *hwnd);
         void *get_hwnd_noti();

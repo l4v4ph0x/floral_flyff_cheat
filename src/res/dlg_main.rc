@@ -41,7 +41,10 @@ FONT 8, "Ms Shell Dlg"
     LTEXT           "bot status:", IDC_STATIC_BOT_STATUS, 60, 2, 362, 8, SS_LEFT
 
 	AUTOCHECKBOX    "perin converter", IDC_CHECBKOX_PERIN_CONVERTER, 200, 22, 75, 14
-    
+
+	LTEXT           "select new target after seconds", IDC_STATIC_RESELECT_AFTER, 200, 40, 100, 8
+	EDITTEXT        IDC_EDIT_RESELECT_AFTER, 310, 36, 50, 14, ES_AUTOHSCROLL | WS_TABSTOP
+
     DEFPUSHBUTTON   "noti text here", ID_NOTI, 4, 118, 362, 14, SS_LEFT
 }
 

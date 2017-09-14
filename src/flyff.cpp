@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <vector>
 #include <cmath>
+#include <ctime>
 
 // courius adds
 //Neuz.exe + 5E5490, makes most of items very big, 
@@ -27,7 +28,9 @@ unsigned long __stdcall _thread_select_target(void *t) {
     flyff f;
     flyff::key k;
     flyff::targetInfo ti;
-    
+	time_t time_selected;
+	unsigned long bad_target;
+
     f = *((flyff *)t); // main class for every client
     killed = true;
     
@@ -51,9 +54,12 @@ unsigned long __stdcall _thread_select_target(void *t) {
             
             // select target if any
             ti = f.getClosestTargetInView();
-            if (ti.base != 0) {
-                printf("closest target: %08X\n", ti.base);
+            if (ti.base != 0 && ti.base != bad_target) {
+                printf("selecting closest target: %08X\n", ti.base);
                 f.select(ti.base);
+
+				// get time we select target
+				time_selected = time(0);
                 
                 if (f.get_kill_to_home() > 0)
                     f.teleport_to_target(ti.base);
@@ -81,6 +87,19 @@ unsigned long __stdcall _thread_select_target(void *t) {
                 PostMessage((HWND)f.get_hwnd(), WM_KEYUP, k.code, MapVirtualKey(k.code, MAPVK_VK_TO_VSC));
 				f.thread_uing = false;
             }
+
+			// check time we have time to kill target
+			if (f.get_reselect_after() > 0) {
+				time_t now = time(0);
+
+				if (time_selected + f.get_reselect_after() < now) {
+					// if we passed time we had to kill target then select 0
+					bad_target = f.getSelect();
+					f.select(0);
+
+					printf("couldn't killd in %d seconds, reselcting target\n", f.get_reselect_after());
+				}
+			}
         }
     }
     
@@ -195,6 +214,7 @@ void flyff::load(void *handle, unsigned long base_addr, unsigned long base_size)
         set_kill_to_home(0);
         set_killed_count(0);
         memset(_vars._saved_pos, '\x00', 12);
+		set_reselect_after(0);
     } else {
         error_string = (char *)texts::error_wrong_flyff;
     }
@@ -439,7 +459,12 @@ void flyff::enable_perin_convert_spam(bool state) {
 		ZwWriteVirtualMemory(_vars._handle, (void *)(_vars._perin_convert_spam_write_addr), "\xEB\x35", 2, 0, true);
 }
 
-
+void flyff::set_reselect_after(int seconds) {
+	_vars.reselect_after = seconds;
+}
+int flyff::get_reselect_after() {
+	return _vars.reselect_after;
+}
 
 
 void flyff::set_hwnd_noti(void *hwnd) {
