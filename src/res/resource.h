@@ -33,6 +33,11 @@
 #define IDC_STATIC_RESELECT_AFTER				1020
 #define IDC_EDIT_RESELECT_AFTER					1021
 
+#define IDC_STATIC_KEY_TO_PRESS_HP				1022
+#define	IDC_EDIT_HP								1023
+#define IDC_COMBO_HP_KEYS						1024
+
+
 #define ID_NOTI                                 1999
 
 // selecting flyff rc

@@ -7,6 +7,12 @@
     <Filter Include="res">
       <UniqueIdentifier>{6bf85376-fe88-476b-b0d9-892e653a3477}</UniqueIdentifier>
     </Filter>
+    <Filter Include="a">
+      <UniqueIdentifier>{1998a457-7248-4417-86d7-f23f3a4dcc7d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="flyffs">
+      <UniqueIdentifier>{feb1a1f0-0c98-46bf-91f5-3b32d2d74aa9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\h\flyff.h">
@@ -36,6 +42,12 @@
     <ClInclude Include="..\src\h\texts.h">
       <Filter>h</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\a\flyff.h">
+      <Filter>a</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\flyffs\floral_flyff.h">
+      <Filter>flyffs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\flyff.cpp" />
@@ -44,6 +56,9 @@
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\search.cpp" />
     <ClCompile Include="..\src\texts.cpp" />
+    <ClCompile Include="..\src\flyffs\floral_flyff.cpp">
+      <Filter>flyffs</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\src\res\dlg_main.rc">

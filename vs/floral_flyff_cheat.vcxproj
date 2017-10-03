@@ -142,6 +142,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\a\flyff.h" />
+    <ClInclude Include="..\src\flyffs\floral_flyff.h" />
     <ClInclude Include="..\src\h\flyff.h" />
     <ClInclude Include="..\src\h\gToolTip.h" />
     <ClInclude Include="..\src\h\losu.h" />
@@ -154,6 +156,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\flyff.cpp" />
+    <ClCompile Include="..\src\flyffs\floral_flyff.cpp" />
     <ClCompile Include="..\src\gToolTip.cpp" />
     <ClCompile Include="..\src\low_functions.cpp" />
     <ClCompile Include="..\src\main.cpp" />

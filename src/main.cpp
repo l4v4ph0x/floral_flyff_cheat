@@ -1,12 +1,15 @@
-#include <windows.h>
+﻿#include <windows.h>
 #include <stdio.h>
 #include <commctrl.h>
 #include <vector>
 
+#include "a/flyff.h"
+
+#include "flyffs/floral_flyff.h"
+
 #include "h/losu.h"
 #include "h/summoner.h"
 #include "h/gToolTip.h"
-#include "h/flyff.h"
 #include "h/texts.h"
 #include "res/resource.h"
 #include "res/values.h"
@@ -78,7 +81,7 @@ unsigned long __stdcall _thread_if_connected(void *t) {
 	for (;; Sleep(1000)) {
 		//printf("%d %08X\n", index, fs[index].getMe());
 
-		if (!fs[index]->getMe())
+		if (!fs[index]->localPlayer->get_me())
 			break;
 	}
 
@@ -117,15 +120,15 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 			// if tab is select flyff
 			if (index == 0) {
 				for (i = 0; i < pids.size(); i++) {
-                    f = new flyff(pids[i]);
+                    f = new floral_flyff(pids[i]);
                     
                     if (f->error_string == nullptr) {
-                        f->get_local_name(txt_buf);
-                        hwnd = GetDlgItem(hDlg, IDC_COMBO_PLAYERS);
-                        SendMessage(hwnd, CB_ADDSTRING, 0, (LPARAM)txt_buf);
+                        f->localPlayer->get_name(txt_buf);
+                        SendMessage(GetDlgItem(hDlg, IDC_COMBO_PLAYERS), CB_ADDSTRING, 0, (LPARAM)txt_buf);
 					}
 					else printf("error: %s\n", f->error_string);
 
+                    // delete class cause we open it again when selected
 					free(f);
 				}
 
@@ -135,21 +138,22 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                 int begin, end;
                 double d;
                 bool use;
-                
+				flyff::key k;
+
                 fCurrentTab = fs[index -1];
                 
-                fCurrentTab->get_local_name(txt_buf);
+                fCurrentTab->localPlayer->get_name(txt_buf);
                 printf("loading tab: %s\n", txt_buf);
                 
 				// disabling perin converter(need update, need to search hdd and get patterns)
-				//EnableWindow(GetDlgItem(hDlg, IDC_CHECBKOX_PERIN_CONVERTER), false);
+				EnableWindow(GetDlgItem(hDlg, IDC_CHECBKOX_PERIN_CONVERTER), false);
 
                 // set bot status hwnd
-                fCurrentTab->set_hwnd_noti(GetDlgItem(hDlg, IDC_STATIC_BOT_STATUS));
+                fCurrentTab->ui->set_hwnd_noti(GetDlgItem(hDlg, IDC_STATIC_BOT_STATUS));
                 
                 // setting no collision ceckbox
                 hwnd = GetDlgItem(hDlg, IDC_CHECBKOX_NO_COLLISION);
-                use = fCurrentTab->get_no_collision();
+                use = fCurrentTab->localPlayer->get_no_collision();
                 if (use)
                     SendMessage(hwnd, BM_SETCHECK, BST_CHECKED, 0);
                 else
@@ -160,7 +164,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                 ShowWindow(hwnd, SW_HIDE);
                 
                 // load tele to target and back home
-                d = fCurrentTab->get_kill_to_home();
+                d = fCurrentTab->bot->get_kill_to_home();
                 if (d == 0) {
                     // uncheck checkbox and edittext
                     hwnd = GetDlgItem(hDlg, IDC_CHECBKOX_TELE_TARGET_HOME);
@@ -174,7 +178,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                 SetWindowText(hwnd, STR_ENABLE_TARGET);
 
                 // set target levels range
-                fCurrentTab->get_target_lvls(&begin, &end);
+                fCurrentTab->bot->get_target_lvls(&begin, &end);
                     // set begin one
                     sprintf(txt_buf, "%d", begin);
                     hwnd = GetDlgItem(hDlg, IDC_EDIT_TARGET_LVL_BEGIN);
@@ -190,11 +194,9 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                 for (i = 0; i < sizeof(combo_items) / sizeof(comboItem); i++)
                     SendMessage(hwnd, CB_ADDSTRING, 0, (LPARAM)combo_items[i].name);
                 
-                flyff::key k;
-                
-                if (!fCurrentTab->getKey(&k)) {
+                if (!fCurrentTab->bot->get_key(&k)) {
                     SendMessage(hwnd, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
-                    fCurrentTab->addUpdateAttackKey(combo_items[0].val, 100.f);
+                    fCurrentTab->bot->add_update_attack_key(flyff::key(combo_items[0].val, 100.f));
                 } else {
                     for (i = 0; i < sizeof(combo_items) / sizeof(comboItem); i++) {
                         if (combo_items[i].val == k.code) {
@@ -215,16 +217,34 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 				// load reselect target after seconds
 				hwnd = GetDlgItem(hDlg, IDC_EDIT_RESELECT_AFTER);
-				sprintf(txt_buf, "%d", fCurrentTab->get_reselect_after());
+				sprintf(txt_buf, "%d", fCurrentTab->bot->get_reselect_after());
 				SetWindowText(hwnd, txt_buf);
+                /*
+				// adding items to combobox
+				hwnd = GetDlgItem(hDlg, IDC_COMBO_HP_KEYS);
 
+				for (i = 0; i < sizeof(combo_items) / sizeof(comboItem); i++)
+					SendMessage(hwnd, CB_ADDSTRING, 0, (LPARAM)combo_items[i].name);
 
+				if (!fCurrentTab->getKey(&k)) {
+					SendMessage(hwnd, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
+					fCurrentTab->addUpdateAttackKey(combo_items[0].val, 100.f);
+				} else {
+					for (i = 0; i < sizeof(combo_items) / sizeof(comboItem); i++) {
+						if (combo_items[i].val == k.code) {
+							SendMessage(hwnd, CB_SETCURSEL, (WPARAM)i, (LPARAM)0);
+							break;
+						}
+					}
+
+				}
+                */
                 // setting toolstips(balloon versions)
                 //gToolTip::AddTip(hCurrentTab, HIthis, "Enter desired range number(in float). Ex: 100", IDC_EDIT_RANGE, true);
                 //gToolTip::AddTip(hTabControl, HIthis, "Enter desired lowest level to select. Ex: 1", IDC_EDIT_TARGET_LVL_BEGIN, true);
                 //gToolTip::AddTip(hDlg, HIthis, "Enter desired highest level to select. Ex: 22", IDC_EDIT_TARGET_LVL_END, true);
             }
-
+            
 			return true;
 		}
 		case WM_COMMAND: {
@@ -238,14 +258,14 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                     
                     // adding new flyff class
                     for (i = 0; i < pids.size(); i++) {
-                        f = new flyff(pids[i]);
-                        f->get_local_name(newbuf);
+                        f = new floral_flyff(pids[i]);
+                        f->localPlayer->get_name(newbuf);
                         
                         if (strcmp(txt_buf, newbuf) == 0) {
                             // set default target levels range
-                            f->set_target_lvls(1, 400);
+                            f->bot->set_target_lvls(1, 400);
                             // set flyff window handle
-                            f->set_hwnd((void *)find_main_window(pids[i]));
+                            f->ui->set_hwnd((void *)find_main_window(pids[i]));
 							// init perin convert function(write to flyff)
 							f->init_perin_convert_spam();
 
@@ -259,6 +279,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                         }
 					} break;
 				}
+                /*
 				case ID_SET_RANGE: {
 					float nr_range;
 
@@ -338,7 +359,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 					if (HIWORD(wParam) == CBN_SELCHANGE) {
 						i = SendMessage((HWND)lParam, (UINT)CB_GETCURSEL, (WPARAM)0, (LPARAM)0);
 
-						printf("%s %x\n", combo_items[i].name, combo_items[i].val);
+						printf("selected f key: %s %x\n", combo_items[i].name, combo_items[i].val);
                         fCurrentTab->addUpdateAttackKey(combo_items[i].val, 100.f);
                         
                         if (fCurrentTab->run(false))
@@ -458,6 +479,14 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 						}
 					} break;
 				}
+				case IDC_COMBO_HP_KEYS: {
+					if (HIWORD(wParam) == CBN_SELCHANGE) {
+						i = SendMessage((HWND)lParam, (UINT)CB_GETCURSEL, (WPARAM)0, (LPARAM)0);
+
+						printf("selected f key: %s %x\n", combo_items[i].name, combo_items[i].val);
+						fCurrentTab->set_hp_key_code(combo_items[i].val);
+					} break;
+				}
                 case ID_NOTI: {
                     unsigned char loc[12];
                     
@@ -475,6 +504,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                     ShowWindow((HWND)lParam, SW_HIDE);
                     break;
                 } break;
+            */
 			} break;
 		}
 		
@@ -483,6 +513,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 	
 	return false;
 }
+
 
 INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     HWND hwnd;
@@ -509,6 +540,7 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 		}
 		case WM_NOTIFY: {
 			switch (((LPNMHDR)lParam)->code) {
+                // when tab changed
 				case TCN_SELCHANGE: {
 					unsigned int index;
 
@@ -524,23 +556,10 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 					}
 
 					return true;
-				}
-				break;
+				} return true;
 			}
 		}
-		case WM_COMMAND: {
-			switch (LOWORD(wParam)) {
-                /*
-				
-				
-				
-				
-                */
-			}
-
-			break;
-		}
-		case WM_CLOSE: {
+        case WM_CLOSE: {
 			DestroyWindow(hDlg);
 			return true;
 		}
@@ -568,7 +587,7 @@ int main() {
     char buf_msg[64];
     
     init_low_functions();
-    
+
     // get current window vars
     hthis = GetConsoleWindow();
     HIthis = (HINSTANCE)GetWindowLong(hthis, -6);
@@ -587,6 +606,8 @@ int main() {
             DispatchMessage(&msg); // send it to dialog procedure
         }
     }
+	
+
     /*
     hwnd = FindWindowA(0, windowName);
     if (hwnd) {
@@ -631,5 +652,7 @@ int main() {
     }
     
     */
+
+    system("pause");
     return 0;
 }
