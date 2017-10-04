@@ -15,5 +15,9 @@ me dif = 65BBFC-659A68
 money = 08013214-08011978(base); offset = 189C old:188C; dif 189C-188C = +10
 name =  08013220-08011978(base); offset = 18A8
 
+// range
+01676D11 offset: 2A6D11-2A62B1(old) dif: A60
 
-
+// col addr
+DAE9DFE0F6C4447B??6A = Neuz.exe+4DD53A addr offset: 64210C
+FC00BC - 00980000 = 6400BC; 64210C-6400BC

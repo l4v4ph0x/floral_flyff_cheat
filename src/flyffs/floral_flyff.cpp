@@ -20,6 +20,91 @@ unsigned long OFFSET_MONEY = 0x1884 + 8 + 0x10;        // 4 byte array int
 
 //////////////////// threads \\\\\\\\\\\\\\\\\\\\
 
+unsigned long __stdcall _thread_select_target(void *t) {
+    bool killed;
+    flyff *f;
+    flyff::key k;
+    flyff::targetInfo ti;
+    time_t time_selected;
+    unsigned long bad_target;
+
+    f = ((flyff *)t); // main class for every client
+    killed = true;
+
+    f->localPlayer->select(0);
+
+    for (;; Sleep(100)) {
+        // deal with killing
+        if (f->localPlayer->get_select() == 0) {
+            if (killed == false) {
+                if (f->bot->get_kill_to_home() > 0 && f->bot->killed_count >= f->bot->get_kill_to_home()) {
+                    f->localPlayer->teleport_to_saved_pos();
+                    f->bot->killed_count = 0;
+                    Sleep(1000);
+                }
+
+                f->bot->killed_count++;
+
+                // setting bot statis text to searching
+                SetWindowText((HWND)f->ui->get_hwnd_noti(), (char *)texts::noti_bot_searching_target);
+            }
+
+            // select target if any
+            ti = f->bot->get_closest_target_in_view();
+            if (ti.base != 0 && ti.base != bad_target) {
+                printf("selecting closest target: %08X\n", ti.base);
+                f->localPlayer->select(ti.base);
+
+                // get time we select target
+                time_selected = time(0);
+
+                if (f->bot->get_kill_to_home() > 0)
+                    f->localPlayer->teleport_to_target(ti);
+
+                killed = false;
+
+                // setting bot status text to attacking
+                SetWindowText((HWND)f->ui->get_hwnd_noti(), (char *)texts::noti_bot_attacking_target);
+            }
+
+            // rotate cam
+            f->bot->thread_uing = true;
+            PostMessage((HWND)f->ui->get_hwnd(), WM_KEYDOWN, VK_RIGHT, MapVirtualKey(VK_RIGHT, MAPVK_VK_TO_VSC));
+            Sleep(50);
+            PostMessage((HWND)f->ui->get_hwnd(), WM_KEYUP, VK_RIGHT, MapVirtualKey(VK_RIGHT, MAPVK_VK_TO_VSC));
+            Sleep(50);
+            f->bot->thread_uing = false;
+        }
+        else {
+            // get key to use
+            if (f->bot->get_key(&k)) {
+                // send key to window
+                f->bot->thread_uing = true;
+                PostMessage((HWND)f->ui->get_hwnd(), WM_KEYDOWN, k.code, MapVirtualKey(k.code, MAPVK_VK_TO_VSC));
+                Sleep(50);
+                PostMessage((HWND)f->ui->get_hwnd(), WM_KEYUP, k.code, MapVirtualKey(k.code, MAPVK_VK_TO_VSC));
+                Sleep(50);
+                f->bot->thread_uing = false;
+            }
+
+            // check time we have time to kill target
+            if (f->bot->get_reselect_after() > 0) {
+                time_t now = time(0);
+
+                if (time_selected + f->bot->get_reselect_after() < now) {
+                    // if we passed time we had to kill target then select 0
+                    bad_target = f->localPlayer->get_select();
+                    f->localPlayer->select(0);
+
+                    printf("couldn't killd in %d seconds, reselcting target\n", f->bot->get_reselect_after());
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
 unsigned long __stdcall _thread_perin_converter(void *t) {
     flyff *f;
 
@@ -77,35 +162,44 @@ void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long bas
         _base_addr = base_addr;
         _handle = handle;
 
-        // old 0x66EDE4(dif: +20)
-        // updated 8.26.2017 0x66EE04(dif: +2190)
+        // old 0x66EDE4 (dif: +20)
+        // updated 8.26.2017 0x66EE04 (dif: +2190)
         // updated 10.2.2017
         _select_addr = base_addr + 0x670F94;
-        // updated 8.26.2017 0x668D88 + 0x20(dif: +2190)
+        // updated 8.26.2017 0x668D88 + 0x20 (dif: +2190)
         // updated 10.2.2017
         _maxInView_addr = base_addr + 0x66AF38;
-        // updated 8.26.2017 0x65E5F0 + 0x20(dif: +2190)
+        // updated 8.26.2017 0x65E5F0 + 0x20 (dif: +2190)
         // updated 10.2.2017
         _targetBase_addr = base_addr + 0x6607A0;
-        // updated 8.26.2017 0x659A48 + 0x20(dif: +2194)
+        // updated 8.26.2017 0x659A48 + 0x20 (dif: +2194)
         // updated 10.2.2017
         _me_addr = base_addr + 0x65BBFC;
+        // old 0x66FDA0 (dif: -0x00980000)
+        // updated 8.27.2017 0x00FC7AFC - 0x00980000 (dif: -2050)
+        // updated 10.3.2017
+        _range_nr_addr = base_addr + 0x00FC7AFC - 0x00980000 - 0x2050;
+        // old 0x2A6161 (dif: +150)
+        // updated 8.26.2017 0x2A62B1 (dif: +A60)
+        // updated 10.3.2017
+        _range_addr = base_addr + 0x2A6D11;
+        // old 0x2A654A (dif: +150)
+        // updated 8.26.2017 0x2A654A + 0x150 (dif: +A60)
+        // updated 10.3.2017
+        _range_all_addr = base_addr + 0x2A654A + 0x150 + 0xA60;
 
-        // updated 8.27.2017
-        _range_nr_addr = base_addr + 0x00FC7AFC - 0x00980000; // old 0x66FDA0
-        // updated 8.26.2017
-        _range_addr = base_addr + 0x2A62B1; //old 0x2A6161(dif: +150)
-
-        // updated 8.26.2017
-        _range_all_addr = base_addr + 0x2A654A + 0x150;
-
-        // update 8.27.2017
-        _no_collision_addr = base_addr + 0xFC00BC - 0x00980000; // old 0x6400BC
+        // old 0x6400BC (dif: -0x00980000)
+        // update 8.27.2017 0xFC00BC - 0x00980000 (dif: -2050)
+        // updated 10.3.2017
+        _no_collision_addr = base_addr + 0x64210C;
 
         // updated 9.2.2017
         _perin_convert_spam_write_addr = base_addr + 0x249096; // old 0x249016(dif: +80)
         // updated 9.2.2017
         _perin_convert_spam_ecx = base_addr + 0x66B628; // old 0x66B608(dif: +20)
+
+        // some initializings
+        init_range();
         // need update
         //init_perin_convert_spam();
 
@@ -116,15 +210,19 @@ void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long bas
         printf("%08X | Done\n", addr + OFFSET_SELECT);
         // end of waiting _select_add to point - }
 
-        // fillin virtual vars
-        localPlayer = new ci_localPlayer();
-        bot = new ci_bot();
+            // fillin virtual vars
+            localPlayer = new ci_localPlayer();
+            bot = new ci_bot();
 
-        // filling with few vars
-        localPlayer->handle = _handle;
-        localPlayer->select_addr = _select_addr;
-        localPlayer->me_addr = _me_addr;
-        localPlayer->no_collision_addr = _no_collision_addr;
+            // filling with few vars
+            localPlayer->parent = this;
+            localPlayer->handle = _handle;
+            localPlayer->select_addr = _select_addr;
+            localPlayer->me_addr = _me_addr;
+            localPlayer->no_collision_addr = _no_collision_addr;
+            localPlayer->range_nr_addr = _range_nr_addr;
+
+            bot->parent = this;
 
         // { - waiting _me_addr to point
         printf("waiting when _me_addr points ... ");
@@ -219,6 +317,10 @@ void floral_flyff::ci_localPlayer::set_no_collision(bool state) {
         ZwWriteVirtualMemory(handle, (void *)(no_collision_addr), "\x01", 1, 0, true);
 }
 
+void floral_flyff::ci_localPlayer::set_range(float f) {
+    // set range number
+    ZwWriteVirtualMemory(handle, (void *)(range_nr_addr), &f, 4, 0);
+}
 
 // ------------------------------------------------- something to do
 void floral_flyff::ci_localPlayer::teleport_to_saved_pos() {
@@ -226,9 +328,18 @@ void floral_flyff::ci_localPlayer::teleport_to_saved_pos() {
         ZwWriteVirtualMemory(handle, (void *)(get_me() + OFFSET_X), &saved_pos, 12, 0);
 }
 
+void floral_flyff::ci_localPlayer::teleport_to_target(targetInfo target) {
+}
+
+void floral_flyff::ci_localPlayer::select(unsigned long target) {
+}
+
+void floral_flyff::ci_localPlayer::attack() {
+}
+
 //////////////////// bot \\\\\\\\\\\\\\\\\\\\
 // ------------------------------------------------- gets
-flyff::c_bot::targetInfo floral_flyff::ci_bot::get_closest_target_in_view() {
+flyff::targetInfo floral_flyff::ci_bot::get_closest_target_in_view() {
     return targetInfo();
 }
 
@@ -243,6 +354,7 @@ bool floral_flyff::ci_bot::get_key(key *k) {
 int floral_flyff::ci_bot::get_reselect_after() {
     return reselect_after;
 }
+
 
 // ------------------------------------------------- sets
 void floral_flyff::ci_bot::add_update_attack_key(key k, bool remove) {
@@ -261,20 +373,40 @@ void floral_flyff::ci_bot::set_reselect_after(int seconds) {
 }
 
 // ------------------------------------------------- something to do
-void floral_flyff::ci_bot::teleport_to_target(targetInfo target) {
+bool floral_flyff::ci_bot::run() {
+    // save new position when bot enables
+    parent->localPlayer->save_location();
+    // resets vars
+    killed_count = 0;
+
+    // running target selecting, killing thread
+    h_select_thread = CreateThread(0, 0, _thread_select_target, this->parent, 0, 0);
+    // set bot status text to created
+    SendMessage((HWND)parent->ui->get_hwnd_noti(), WM_SETTEXT, 0, (LPARAM)texts::noti_bot_created);
+
+    return get_run();
 }
 
-void floral_flyff::ci_bot::select(unsigned long target) {
+void floral_flyff::ci_bot::stop() {
+    // waiting for thread to finish all keypresses
+    for (Sleep(50); thread_uing; Sleep(50));
+    // terminating target selecting and killing thread and nulling vars
+    TerminateThread(h_select_thread, 0);
+    h_select_thread = nullptr;
+    // set bot status text to idle
+    SetWindowText((HWND)parent->ui->get_hwnd_noti(), (char *)texts::noti_bot_idle);
 }
 
-void floral_flyff::ci_bot::attack() {
+
+// initializings
+void floral_flyff::init_range() {
+    // enabling range for everyone
+    ZwWriteVirtualMemory(_handle, (void *)(_range_all_addr), (void *)"\x90\x90", 2, 0, true);
+
+    // force to use set range
+    ZwWriteVirtualMemory(_handle, (void *)(_range_addr), (void *)"\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90", 12, 0, true);
+    ZwWriteVirtualMemory(_handle, (void *)(_range_addr + 12 + 2), &_range_nr_addr, 4, 0, true);
 }
-
-
-
-
-//////////////////// miscs \\\\\\\\\\\\\\\\\\\\
-
 
 void floral_flyff::init_perin_convert_spam() {
     ZwWriteVirtualMemory(_handle, (void *)(_perin_convert_spam_write_addr),
@@ -284,6 +416,8 @@ void floral_flyff::init_perin_convert_spam() {
     ZwWriteVirtualMemory(_handle, (void *)(_perin_convert_spam_write_addr + 8), &_perin_convert_spam_ecx, 4, 0, true);
 }
 
+
+//////////////////// miscs \\\\\\\\\\\\\\\\\\\\
 // ------------------------------------------------- sets
 void floral_flyff::set_perin_convert_spam(bool state) {
     _use_perin_convert_spam = state;

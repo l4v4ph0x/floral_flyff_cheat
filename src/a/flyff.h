@@ -20,6 +20,15 @@ class flyff {
             }
 		};
 
+        struct targetInfo {
+            unsigned long base;
+            float x, y, z;
+            float hyp;
+            unsigned long lvl;
+            unsigned long hp;
+            char name[255];
+        };
+
         // vars >
         char *error_string;
 
@@ -29,11 +38,13 @@ class flyff {
 		// local char class
         struct c_localPlayer {
             // vars it uses >
+            flyff *parent;
 			void *handle;
 
             unsigned long select_addr;
             unsigned long me_addr;
             unsigned long no_collision_addr;
+            unsigned long range_nr_addr;
 
             unsigned char saved_pos[12];
             // < end of vars it uses
@@ -49,37 +60,45 @@ class flyff {
             // set
 			virtual void save_location(unsigned char *loc = nullptr) = 0;
             virtual void set_no_collision(bool state) = 0;
+            virtual void set_range(float f) = 0;
 
             // do
 			virtual void teleport_to_saved_pos() = 0;
+            virtual void teleport_to_target(targetInfo target) = 0;
+            virtual void select(unsigned long target) = 0;
+            virtual void attack() = 0;
 		};
 
 		// bot functions herro
         struct c_bot {
-			struct targetInfo {
-				unsigned long base;
-				float x, y, z;
-				float hyp;
-				unsigned long lvl;
-				unsigned long hp;
-				char name[255];
-			};
-
             // vars >
+            flyff *parent;
             std::vector<key> keys;
+
             int reselect_after;
-            double kill_to_home;
             int target_lvl_begin, target_lvl_end;
+
+            void *h_select_thread;
+            bool thread_uing;
+            double killed_count;
+            double kill_to_home;
             // < vars
 
             // get
 			virtual targetInfo get_closest_target_in_view() = 0;
-			virtual bool get_key(flyff::key *k) = 0;
+			virtual bool get_key(key *k) = 0;
             virtual int get_reselect_after() = 0;
+            double get_killed_count() { return killed_count; };
             double get_kill_to_home() { return kill_to_home; };
-            void set_target_lvls(int begin, int end) {
+            /**
+            * if one of arguments are set to -1 then not writing this one
+            **/
+            void set_target_lvls(int begin = -1, int end = -1) {
                 if (begin != -1) target_lvl_begin = begin;
                 if (end != -1) target_lvl_end = end;
+            };
+            bool get_run() {
+                return !(h_select_thread == nullptr);
             };
 
             // set
@@ -92,9 +111,8 @@ class flyff {
             };
 
             // do
-			virtual void teleport_to_target(targetInfo target) = 0;
-			virtual void select(unsigned long target) = 0;
-			virtual void attack() = 0;            
+            virtual bool run() = 0;
+            virtual void stop() = 0;
 		};
 
         struct c_ui {
@@ -116,8 +134,6 @@ class flyff {
 
 	public:
         // miscs
-        virtual void init_perin_convert_spam() = 0;
-
         // set
         virtual void set_perin_convert_spam(bool state) = 0;
 

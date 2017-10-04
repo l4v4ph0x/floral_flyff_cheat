@@ -91,9 +91,13 @@ class floral_flyff: public flyff {
             // set
 			void save_location(unsigned char *loc = nullptr);
             void set_no_collision(bool state);
+            void set_range(float f);
 
             // do
 			void teleport_to_saved_pos();
+            void teleport_to_target(targetInfo target);
+            void select(unsigned long target);
+            void attack();
 		};
 
         class ci_bot : public c_bot {
@@ -107,14 +111,15 @@ class floral_flyff: public flyff {
             void set_reselect_after(int seconds);
 
             // do
-            void teleport_to_target(targetInfo target);
-            void select(unsigned long target);
-            void attack();
+            bool run();
+            void stop();
         };
-
-        // miscs
+        
+        void init_range();
         void init_perin_convert_spam();
 
+
+        // miscs
         // set
         void set_perin_convert_spam(bool state);
 
