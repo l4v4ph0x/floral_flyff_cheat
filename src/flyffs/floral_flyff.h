@@ -104,7 +104,6 @@ class floral_flyff: public flyff {
             // get
             targetInfo get_closest_target_in_view();
             bool get_key(key *k);
-            int get_reselect_after();
 
             // set
             void add_update_attack_key(key k, bool remove = false);

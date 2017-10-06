@@ -80,9 +80,7 @@ unsigned long __stdcall _thread_select_target(void *t) {
             if (f->bot->get_key(&k)) {
                 // send key to window
                 f->bot->thread_uing = true;
-                PostMessage((HWND)f->ui->get_hwnd(), WM_KEYDOWN, k.code, MapVirtualKey(k.code, MAPVK_VK_TO_VSC));
-                Sleep(50);
-                PostMessage((HWND)f->ui->get_hwnd(), WM_KEYUP, k.code, MapVirtualKey(k.code, MAPVK_VK_TO_VSC));
+                f->localPlayer->attack();
                 Sleep(50);
                 f->bot->thread_uing = false;
             }
@@ -118,6 +116,20 @@ unsigned long __stdcall _thread_perin_converter(void *t) {
         else f->enable_perin_convert_spam(false);
         //}
     }
+}
+
+//////////////////// no class functions \\\\\\\\\\\\\\\\\\\\
+
+float get_hyp(flyff *f, flyff::targetInfo ti) {
+    float x = 0,
+        z = 0;
+
+    if (OFFSET_X != 0) {
+        ZwReadVirtualMemory(f->localPlayer->handle, (void *)(f->localPlayer->get_me() + OFFSET_X), &x, 4, 0);
+        ZwReadVirtualMemory(f->localPlayer->handle, (void *)(f->localPlayer->get_me() + OFFSET_X + 8), &z, 4, 0);
+    }
+
+    return sqrt((x - ti.x) * (x - ti.x) + (z - ti.z) * (z - ti.z));
 }
 
 //////////////////// class contructors \\\\\\\\\\\\\\\\\\\\
@@ -223,6 +235,9 @@ void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long bas
             localPlayer->range_nr_addr = _range_nr_addr;
 
             bot->parent = this;
+            bot->handle = _handle;
+            bot->maxInView_addr = _maxInView_addr;
+            bot->targetBase_addr = _targetBase_addr;
 
         // { - waiting _me_addr to point
         printf("waiting when _me_addr points ... ");
@@ -237,11 +252,11 @@ void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long bas
         printf("local name: %s\n", buf);
 
         // nulling some vars
-        //_h_select_thread = nullptr;
-        //set_kill_to_home(0);
-        //set_killed_count(0);
-        //memset(_vars._saved_pos, '\x00', 12);
-        //set_reselect_after(0);
+        bot->h_select_thread = nullptr;
+        bot->set_kill_to_home(0);
+        bot->killed_count = 0;
+        bot->set_reselect_after(0);
+        memset(localPlayer->saved_pos, '\x00', 12);
     } 
     // if we havent found flyff we give nothing
     else {
@@ -329,18 +344,87 @@ void floral_flyff::ci_localPlayer::teleport_to_saved_pos() {
 }
 
 void floral_flyff::ci_localPlayer::teleport_to_target(targetInfo target) {
+    unsigned char pos[12];
+
+    if (OFFSET_X != 0) {
+        ZwReadVirtualMemory(handle, (void *)(target.base + OFFSET_X), &pos, 12, 0);
+        *(float *)(pos + 4) += 2.f;
+        ZwWriteVirtualMemory(handle, (void *)(get_me() + OFFSET_X), &pos, 12, 0);
+    }
 }
 
 void floral_flyff::ci_localPlayer::select(unsigned long target) {
+    unsigned long pointed = 0;
+
+    if (OFFSET_SELECT != 0) {
+        ZwReadVirtualMemory(handle, (void *)(select_addr), &pointed, 4, 0);
+        ZwWriteVirtualMemory(handle, (void *)(pointed + OFFSET_SELECT), &target, 4, 0);
+    }
 }
 
 void floral_flyff::ci_localPlayer::attack() {
+    key k;
+    
+    if (parent->bot->get_key(&k)) {
+        PostMessage((HWND)parent->ui->get_hwnd(), WM_KEYDOWN, k.code, MapVirtualKey(k.code, MAPVK_VK_TO_VSC));
+        Sleep(50);
+        PostMessage((HWND)parent->ui->get_hwnd(), WM_KEYUP, k.code, MapVirtualKey(k.code, MAPVK_VK_TO_VSC));
+    }
+
 }
 
 //////////////////// bot \\\\\\\\\\\\\\\\\\\\
 // ------------------------------------------------- gets
 flyff::targetInfo floral_flyff::ci_bot::get_closest_target_in_view() {
-    return targetInfo();
+    unsigned long maxInView;
+    unsigned long target;
+    unsigned long type;
+    unsigned long lvl;
+    unsigned long type_pet;
+    unsigned char is_dead;
+
+    targetInfo closest_ti;
+
+    maxInView = 0;
+    closest_ti = targetInfo();
+    closest_ti.hyp = 99999999.f;
+
+    ZwReadVirtualMemory(handle, (void *)(maxInView_addr), &maxInView, 4, 0);
+
+    //printf("maxInView: %d\n", maxInView);
+
+    for (unsigned long i = 1; i < maxInView; i++) {
+        target = 0;
+        type = 0;
+        lvl = 0;
+        type_pet = 0;
+        is_dead = 0;
+
+        ZwReadVirtualMemory(handle, (void *)(i * 4 + targetBase_addr), &target, 4, 0);
+        ZwReadVirtualMemory(handle, (void *)(target + 8), &type, 4, 0);
+        ZwReadVirtualMemory(handle, (void *)(target + OFFSET_LVL), &lvl, 4, 0);
+        ZwReadVirtualMemory(handle, (void *)(target + OFFSET_TYPE_PET), &type_pet, 4, 0);
+        ZwReadVirtualMemory(handle, (void *)(target + OFFSET_IS_DEAD), &is_dead, 1, 0);
+
+        //printf("base: %08X\ntarget: %08X\ntype: %d\nlvl: %d\nis_dead: %d\npet: %d\n", 
+        //    i * 4 + targetBase_addr, target, type, lvl, type_pet, is_dead);
+
+        if (type == 18 && lvl >= target_lvl_begin && lvl <= target_lvl_end && type_pet != 19 && is_dead == 255) {
+            targetInfo ti;
+            ZwReadVirtualMemory(handle, (void *)(target + OFFSET_X), &ti.x, 4, 0);
+            ZwReadVirtualMemory(handle, (void *)(target + OFFSET_X + 4), &ti.y, 4, 0);
+            ZwReadVirtualMemory(handle, (void *)(target + OFFSET_X + 8), &ti.z, 4, 0);
+            ti.hyp = get_hyp(this->parent, ti);
+
+            if (ti.hyp < closest_ti.hyp) {
+                ti.base = target;
+                ti.lvl = lvl;
+                closest_ti = ti;
+            }
+        }
+    }
+
+    return closest_ti;
 }
 
 bool floral_flyff::ci_bot::get_key(key *k) {
@@ -349,10 +433,6 @@ bool floral_flyff::ci_bot::get_key(key *k) {
         return true;
     }
     return false;
-}
-
-int floral_flyff::ci_bot::get_reselect_after() {
-    return reselect_after;
 }
 
 

@@ -73,6 +73,11 @@ class flyff {
         struct c_bot {
             // vars >
             flyff *parent;
+            void *handle;
+
+            unsigned long maxInView_addr;
+            unsigned long targetBase_addr;
+
             std::vector<key> keys;
 
             int reselect_after;
@@ -87,7 +92,7 @@ class flyff {
             // get
 			virtual targetInfo get_closest_target_in_view() = 0;
 			virtual bool get_key(key *k) = 0;
-            virtual int get_reselect_after() = 0;
+            int get_reselect_after() { return reselect_after; };
             double get_killed_count() { return killed_count; };
             double get_kill_to_home() { return kill_to_home; };
             /**

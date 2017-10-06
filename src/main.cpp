@@ -167,10 +167,18 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                 d = fCurrentTab->bot->get_kill_to_home();
                 if (d == 0) {
                     // uncheck checkbox and edittext
+                    //hwnd = GetDlgItem(hDlg, IDC_CHECBKOX_TELE_TARGET_HOME);
+                    //SendMessage(hwnd, BM_SETCHECK, BST_UNCHECKED, 0);
+                    //hwnd = GetDlgItem(hDlg, IDC_EDIT_TELE_HOME_AFTER_KILLS);
+                    //EnableWindow(hwnd, false);
+                } else {
+                    // check checkbox and edittext
                     hwnd = GetDlgItem(hDlg, IDC_CHECBKOX_TELE_TARGET_HOME);
-                    SendMessage(hwnd, BM_SETCHECK, BST_UNCHECKED, 0);
+                    SendMessage(hwnd, BM_SETCHECK, BST_CHECKED, 0);
                     hwnd = GetDlgItem(hDlg, IDC_EDIT_TELE_HOME_AFTER_KILLS);
-                    EnableWindow(hwnd, false);
+                    sprintf(txt_buf, "%.0f", fCurrentTab->bot->get_kill_to_home());
+                    SetWindowText(hwnd, txt_buf);
+                    EnableWindow(hwnd, true);
                 }
                 
                 // set target selector button to enable
@@ -368,16 +376,18 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 					// get control
 					hwnd = GetDlgItem(hDlg, ID_TARGET_ENABLE);
 
-					if (fCurrentTab->bot->run() == false) {
-						// set window text to disable target selector
-						SetWindowText(hwnd, STR_DISABLE_TARGET);
+					if (fCurrentTab->bot->get_run() == false) {
+                        if (fCurrentTab->bot->run()) {
+						    // set window text to disable target selector
+						    SetWindowText(hwnd, STR_DISABLE_TARGET);
+                        }
 					} else {
 						fCurrentTab->bot->stop();
 
 						// set windw text to enable target selector
 						SetWindowText(hwnd, STR_ENABLE_TARGET);
 					} break;
-                }/*
+                }
                 case IDC_CHECBKOX_TELE_TARGET_HOME: {
                     if (HIWORD(wParam) == BN_CLICKED) {
                         bool checked = SendMessage((HWND)lParam, BM_GETCHECK, 0, 0);
@@ -385,17 +395,17 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                         
                         if (checked == true) {
                             EnableWindow(hwnd, true);
-                            fCurrentTab->set_kill_to_home(3);
-                            sprintf(txt_buf, "%.0f", fCurrentTab->get_kill_to_home());
+                            fCurrentTab->bot->set_kill_to_home(3);
+                            sprintf(txt_buf, "%.0f", fCurrentTab->bot->get_kill_to_home());
                             SetWindowText(hwnd, txt_buf);
                             SetFocus(hwnd);
                         } else {
                             EnableWindow(hwnd, false);
-                            fCurrentTab->set_kill_to_home(0);
+                            fCurrentTab->bot->set_kill_to_home(0);
                             SetWindowText(hwnd, "");
                         }
                         
-                        if (fCurrentTab->run(false))
+                        if (fCurrentTab->bot->get_run())
                             show_noti((char *)texts::noti_reenable_bot, 6000);
 					} break;
                 }
@@ -408,24 +418,24 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 							GetWindowTextA((HWND)lParam, txt_buf, sizeof(txt_buf) / sizeof(txt_buf[0]));
 							fl = atof(txt_buf);
 							
-                            if (fl != fCurrentTab->get_kill_to_home()) {
+                            if (fl != fCurrentTab->bot->get_kill_to_home()) {
                                 if (fl <= 0) {
-                                    fCurrentTab->set_kill_to_home(0);
+                                    fCurrentTab->bot->set_kill_to_home(0);
                                     SendMessage(hwnd, BM_SETCHECK, BST_UNCHECKED, 0);
                                 } else {
-                                    fCurrentTab->set_kill_to_home(fl);
+                                    fCurrentTab->bot->set_kill_to_home(fl);
                                     SendMessage(hwnd, BM_SETCHECK, BST_CHECKED, 0);
                                 }
                                 
-                                if (fCurrentTab->run(false))
+                                if (fCurrentTab->bot->get_run())
                                     show_noti((char *)texts::noti_reenable_bot, 6000);
 							} break;
                         }
 						case EN_KILLFOCUS: {
-							sprintf(txt_buf, "%.0f", fCurrentTab->get_kill_to_home());
+							sprintf(txt_buf, "%.0f", fCurrentTab->bot->get_kill_to_home());
 							SetWindowText((HWND)lParam, txt_buf);
 
-                            if (fCurrentTab->get_kill_to_home() == 0) {
+                            if (fCurrentTab->bot->get_kill_to_home() == 0) {
                                 EnableWindow((HWND)lParam, false);
                                 SetWindowText((HWND)lParam, "");
 							} break;
@@ -435,12 +445,12 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                 case IDC_CHECBKOX_NO_COLLISION: {
                     if (HIWORD(wParam) == BN_CLICKED) {
                         bool checked = SendMessage((HWND)lParam, BM_GETCHECK, 0, 0);
-                        fCurrentTab->set_no_collision(checked);
+                        fCurrentTab->localPlayer->set_no_collision(checked);
 					} break;
                 }
 				case ID_CLOSE_TAB: {
 					close_tab(TabCtrl_GetCurFocus(hTabControl) -1);
-				}
+				}/*
 				case IDC_CHECBKOX_PERIN_CONVERTER: {
 					if (HIWORD(wParam) == BN_CLICKED) {
 						bool checked = SendMessage((HWND)lParam, BM_GETCHECK, 0, 0);
@@ -484,25 +494,21 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 						printf("selected f key: %s %x\n", combo_items[i].name, combo_items[i].val);
 						fCurrentTab->set_hp_key_code(combo_items[i].val);
 					} break;
-				}
+				}*/
                 case ID_NOTI: {
                     unsigned char loc[12];
                     
                     GetWindowTextA((HWND)lParam, txt_buf, sizeof(txt_buf) / sizeof(txt_buf[0]));
                     
                     if (strcmp(texts::noti_reenable_bot, txt_buf) == 0) {
-                        fCurrentTab->get_location(loc);
-                        
                         // noti wants to reeable bot
-                        fCurrentTab->stop();
-                        fCurrentTab->save_location(loc);
-                        fCurrentTab->run();
+                        fCurrentTab->bot->stop();
+                        fCurrentTab->bot->run();
                     }
                     
                     ShowWindow((HWND)lParam, SW_HIDE);
                     break;
                 } break;
-            */
 			} break;
 		}
 		
@@ -618,6 +624,6 @@ int main() {
     }
 
     // easier to debug errors on windows
-    system("pause");
+    //system("pause");
     return 0;
 }
