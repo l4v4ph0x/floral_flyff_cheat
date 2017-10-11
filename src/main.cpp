@@ -6,6 +6,7 @@
 #include "a/flyff.h"
 
 #include "flyffs/floral_flyff.h"
+#include "flyffs/shining_nation.h"
 
 #include "h/losu.h"
 #include "h/summoner.h"
@@ -101,6 +102,29 @@ void show_noti(char *txt, unsigned int miliseconds) {
     CreateThread(0, 0, _thread_hide_noti, 0, 0, 0);
 }
 
+flyff *get_flyff_by_pid(unsigned long pid) {
+    char txt_buf[256];
+
+    flyff *f = new floral_flyff(pid);
+
+    if (f->error_string == nullptr) {
+        return f;
+    } else {
+        printf("error: %s\n\n", f->error_string);
+        // delete class cause we open it again when selected
+        free(f);
+
+        f = new shining_nation(pid);
+
+        if (f->error_string == nullptr) {
+            return f;
+        }
+        else printf("error: %s\n\n", f->error_string);
+    }
+
+    return nullptr;
+}
+
 INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	HWND hwnd;
 	char txt_buf[256];
@@ -120,14 +144,12 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                 pids = get_procs("Neuz.exe");
 
 				for (i = 0; i < pids.size(); i++) {
-                    f = new floral_flyff(pids[i]);
-                    
-                    if (f->error_string == nullptr) {
+                    f = get_flyff_by_pid(pids[i]);
+
+                    if (f != nullptr) {
                         f->localPlayer->get_name(txt_buf);
                         SendMessage(GetDlgItem(hDlg, IDC_COMBO_PLAYERS), CB_ADDSTRING, 0, (LPARAM)txt_buf);
-					}
-					else printf("error: %s\n", f->error_string);
-
+                    }
                     // delete class cause we open it again when selected
 					free(f);
 				}
@@ -266,7 +288,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                     
                     // adding new flyff class
                     for (i = 0; i < pids.size(); i++) {
-                        f = new floral_flyff(pids[i]);
+                        f = get_flyff_by_pid(pids[i]);
                         f->localPlayer->get_name(newbuf);
                         
                         if (strcmp(txt_buf, newbuf) == 0) {

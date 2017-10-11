@@ -108,7 +108,7 @@ class flyff {
 
             // set
 			virtual void add_update_attack_key(key k, bool remove = false) = 0;
-            virtual void set_reselect_after(int seconds) = 0;
+            virtual void set_reselect_after(int seconds) { reselect_after = seconds; };
             void set_kill_to_home(double val) { kill_to_home = val; };
             void get_target_lvls(int *begin, int *end) {
                 *begin = target_lvl_begin;

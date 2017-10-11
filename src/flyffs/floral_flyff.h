@@ -7,6 +7,17 @@
 
 class floral_flyff: public flyff {
 	private:
+        // offsets >
+        static const unsigned long OFFSET_SELECT;
+        static const unsigned long OFFSET_X;
+        static const unsigned long OFFSET_LVL;
+        static const unsigned long OFFSET_IS_DEAD;
+        static const unsigned long OFFSET_TYPE_PET;
+        static const unsigned long OFFSET_NAME;
+        static const unsigned long OFFSET_ID;
+        static const unsigned long OFFSET_MONEY;
+        // < end of offsets
+
         // vars >
 		void *_hwnd;
 		void *_handle;
@@ -29,6 +40,8 @@ class floral_flyff: public flyff {
         void *_h_select_thread;
         // < end of vars
 
+        static unsigned long __stdcall floral_flyff::_thread_select_target(void *t);
+        static float get_hyp(flyff *f, flyff::targetInfo ti);
         void load(void *handle, unsigned long base_addr, unsigned long base_size);
 
 		/*
@@ -107,7 +120,6 @@ class floral_flyff: public flyff {
 
             // set
             void add_update_attack_key(key k, bool remove = false);
-            void set_reselect_after(int seconds);
 
             // do
             bool run();
