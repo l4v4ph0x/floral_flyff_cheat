@@ -180,6 +180,7 @@ void shining_nation::load(void *handle, unsigned long base_addr, unsigned long b
         //init_perin_convert_spam();
         init_select();
         init_no_collision();
+        init_range();
 
         // { - waiting _select_addr to point
         printf("waiting when _select_addr points ... ");
@@ -201,7 +202,7 @@ void shining_nation::load(void *handle, unsigned long base_addr, unsigned long b
         localPlayer->range_nr_addr = _range_nr_addr;
         localPlayer->anti_mem_select_addr = _anti_mem_select_addr;
 
-        localPlayer->max_range = 4.f;
+        localPlayer->max_range = 3.8f;
 
         bot->parent = this;
         bot->handle = _handle;
@@ -462,7 +463,8 @@ void shining_nation::init_range() {
     ZwWriteVirtualMemory(_handle, (void *)_range_addr,
         "\xA1\x4C\x8E\x56\x00\x89\x44\x24\x0C\x90\x90\x90\x90\x90\x90\x90\x90",
         17, 0, true);
-    ZwWriteVirtualMemory(_handle, (void *)(_range_addr +1), &_range_nr_addr, 4, 0, true);
+    ZwWriteVirtualMemory(_handle, (void *)(_range_addr + 1), &_range_nr_addr, 4, 0, true);
+    ZwWriteVirtualMemory(_handle, (void *)(_range_all_addr), "\x90\x90", 2, 0, true);
 }
 
 void shining_nation::init_perin_convert_spam() {
