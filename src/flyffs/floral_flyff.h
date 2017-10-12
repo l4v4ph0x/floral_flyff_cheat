@@ -104,7 +104,7 @@ class floral_flyff: public flyff {
             // set
 			void save_location(unsigned char *loc = nullptr);
             void set_no_collision(bool state);
-            void set_range(float f);
+            float set_range(float f);
 
             // do
 			void teleport_to_saved_pos();

@@ -45,8 +45,11 @@ class flyff {
             unsigned long me_addr;
             unsigned long no_collision_addr;
             unsigned long range_nr_addr;
+            unsigned long anti_mem_select_addr;
 
             unsigned char saved_pos[12];
+
+            float max_range = 4;
             // < end of vars it uses
 
             // get
@@ -56,11 +59,12 @@ class flyff {
 			virtual unsigned long get_select() = 0;
 			virtual void get_location(unsigned char *loc) = 0; // 12 bytes
             virtual bool get_no_collision() = 0;
+            float get_max_range() { return max_range; };
 
             // set
 			virtual void save_location(unsigned char *loc = nullptr) = 0;
             virtual void set_no_collision(bool state) = 0;
-            virtual void set_range(float f) = 0;
+            virtual float set_range(float f) = 0;
 
             // do
 			virtual void teleport_to_saved_pos() = 0;

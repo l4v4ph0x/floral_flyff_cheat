@@ -10,7 +10,7 @@ class shining_nation : public flyff {
         static const unsigned long OFFSET_X;
         static const unsigned long OFFSET_LVL;
         static const unsigned long OFFSET_HP;
-        //unsigned long OFFSET_TYPE_PET;
+        static const unsigned long OFFSET_PET_TYPE;
         static const unsigned long OFFSET_MONEY;
         // < end of offsets
 
@@ -24,11 +24,17 @@ class shining_nation : public flyff {
         unsigned long _targetBase_addr;
         unsigned long _me_addr;
 
+        unsigned long _anti_mem_select_addr;
+        unsigned long _anti_mem_select_call;
+        unsigned long _anti_mem_select_ecx;
+        unsigned long _anti_mem_select_detour_start;
+
         unsigned long _range_all_addr;
         unsigned long _range_addr;
         unsigned long _range_nr_addr;
 
         unsigned long _no_collision_addr;
+        unsigned long _anti_no_collision_addr;
 
         bool _use_perin_convert_spam;
         unsigned long _perin_convert_spam_write_addr;
@@ -59,7 +65,7 @@ class shining_nation : public flyff {
             // set
             void save_location(unsigned char *loc = nullptr);
             void set_no_collision(bool state);
-            void set_range(float f);
+            float set_range(float f);
 
             // do
             void teleport_to_saved_pos();
@@ -84,7 +90,7 @@ class shining_nation : public flyff {
         void init_range();
         void init_perin_convert_spam();
         void init_select();
-
+        void init_no_collision();
 
         // miscs
         // set

@@ -13,7 +13,7 @@ const unsigned long shining_nation::OFFSET_SELECT = 0x20;         // type = 4 by
 const unsigned long shining_nation::OFFSET_X = 0x160;             // type = float
 const unsigned long shining_nation::OFFSET_LVL = 0x6EC;           // type = 4 bytes
 const unsigned long shining_nation::OFFSET_HP = 0x710;            // type 4 bytes
-//unsigned long OFFSET_TYPE_PET = 
+const unsigned long shining_nation::OFFSET_PET_TYPE = 0x720;
 const unsigned long shining_nation::OFFSET_MONEY = 0x1638;        // 4 bytes int
 
 //////////////////// threads \\\\\\\\\\\\\\\\\\\\
@@ -162,11 +162,24 @@ void shining_nation::load(void *handle, unsigned long base_addr, unsigned long b
         _targetBase_addr = base_addr + 0x887108;
         _me_addr = base_addr + 0x6131E0;
 
+        _range_addr = base_addr + 0x006AB9FC - 0x00400000;
+        _range_all_addr = base_addr + 0x006ABCFF - 0x00400000;
+        _range_nr_addr = base_addr + 0x168E4C;
+        
+        _anti_mem_select_addr = base_addr + 0x008FBE18 - 0x00400000;
+        _anti_mem_select_call = base_addr + 0x00424E80 - 0x00400000;
+        _anti_mem_select_ecx = base_addr + 0x0A0A7D8 - 0x00400000;
+        _anti_mem_select_detour_start = base_addr + 0x005731EE - 0x00400000;
+
+        _no_collision_addr = base_addr + 0x9F7B74 - 0x00400000;
+        _anti_no_collision_addr = base_addr + 0x00731BE9 - 0x00400000;
+
         // need implementation
         //init_range();
         // need implementation
         //init_perin_convert_spam();
         init_select();
+        init_no_collision();
 
         // { - waiting _select_addr to point
         printf("waiting when _select_addr points ... ");
@@ -186,6 +199,9 @@ void shining_nation::load(void *handle, unsigned long base_addr, unsigned long b
         localPlayer->me_addr = _me_addr;
         localPlayer->no_collision_addr = _no_collision_addr;
         localPlayer->range_nr_addr = _range_nr_addr;
+        localPlayer->anti_mem_select_addr = _anti_mem_select_addr;
+
+        localPlayer->max_range = 4.f;
 
         bot->parent = this;
         bot->handle = _handle;
@@ -225,7 +241,7 @@ void shining_nation::load(void *handle, unsigned long base_addr, unsigned long b
 //////////////////// localPlayer \\\\\\\\\\\\\\\\\\\\
 // ------------------------------------------------- gets
 void shining_nation::ci_localPlayer::get_name(char *name) {
-    memcpy(&*name, "Shining Nation: cant get name", 30);
+    memcpy(&*name, "Shining Nation: can't get name", 31);
 
     // ruskii is in cyrillic and its unicode, this code is in multibyte
     //if (OFFSET_NAME != 0)
@@ -264,8 +280,9 @@ void shining_nation::ci_localPlayer::get_location(unsigned char *loc) {
 }
 
 bool shining_nation::ci_localPlayer::get_no_collision() {
-    // need implementation
-    return false;
+    bool collision;
+    ZwReadVirtualMemory(handle, (void *)(no_collision_addr), &collision, 1, 0);
+    return !collision;
 }
 
 
@@ -281,12 +298,22 @@ void shining_nation::ci_localPlayer::save_location(unsigned char *loc) {
 }
 
 void shining_nation::ci_localPlayer::set_no_collision(bool state) {
-    // need implementation
+    if (state == true)
+        ZwWriteVirtualMemory(handle, (void *)(no_collision_addr), "\x00", 1, 0, true);
+    else
+        ZwWriteVirtualMemory(handle, (void *)(no_collision_addr), "\x01", 1, 0, true);
 }
 
-void shining_nation::ci_localPlayer::set_range(float f) {
+float shining_nation::ci_localPlayer::set_range(float f) {
+    if (f > get_max_range()) {
+        f = get_max_range();
+        printf("Shining Nation flyff only can use max %f range\n", f);
+    }
     // set range number
     ZwWriteVirtualMemory(handle, (void *)(range_nr_addr), &f, 4, 0);
+
+    // returning value that we really wrote
+    return f;
 }
 
 // ------------------------------------------------- something to do
@@ -311,6 +338,10 @@ void shining_nation::ci_localPlayer::select(unsigned long target) {
     if (OFFSET_SELECT != 0) {
         ZwReadVirtualMemory(handle, (void *)(select_addr), &pointed, 4, 0);
         ZwWriteVirtualMemory(handle, (void *)(pointed + OFFSET_SELECT), &target, 4, 0);
+        Sleep(100);
+
+        if (target != 0)
+            ZwWriteVirtualMemory(handle, (void *)(anti_mem_select_addr), "\x75", 1, 0);
     }
 }
 
@@ -322,7 +353,6 @@ void shining_nation::ci_localPlayer::attack() {
         Sleep(50);
         PostMessage((HWND)parent->ui->get_hwnd(), WM_KEYUP, k.code, MapVirtualKey(k.code, MAPVK_VK_TO_VSC));
     }
-
 }
 
 //////////////////// bot \\\\\\\\\\\\\\\\\\\\
@@ -332,8 +362,8 @@ flyff::targetInfo shining_nation::ci_bot::get_closest_target_in_view() {
     unsigned long target;
     unsigned long type;
     unsigned long lvl;
-    unsigned long type_pet;
-    unsigned char hp;
+    unsigned long pet_type;
+    unsigned long hp;
 
     targetInfo closest_ti;
 
@@ -349,17 +379,19 @@ flyff::targetInfo shining_nation::ci_bot::get_closest_target_in_view() {
         target = 0;
         type = 0;
         lvl = 0;
-        type_pet = 0;
         hp = 0;
+        pet_type = 0;
 
         ZwReadVirtualMemory(handle, (void *)(i * 4 + targetBase_addr), &target, 4, 0);
         ZwReadVirtualMemory(handle, (void *)(target + 4), &type, 4, 0);
         ZwReadVirtualMemory(handle, (void *)(target + OFFSET_LVL), &lvl, 4, 0);
+        ZwReadVirtualMemory(handle, (void *)(target + OFFSET_HP), &hp, 4, 0);
+        ZwReadVirtualMemory(handle, (void *)(target + OFFSET_PET_TYPE), &pet_type, 4, 0);
 
         //printf("base: %08X\ntarget: %08X\ntype: %d\nlvl: %d\n", 
         //s    i * 4 + targetBase_addr, target, type, lvl);
 
-        if (type == 18 && lvl >= target_lvl_begin && lvl <= target_lvl_end) {
+        if (type == 18 && lvl >= target_lvl_begin && lvl <= target_lvl_end && hp > 1 && pet_type != 19) {
             targetInfo ti;
             ZwReadVirtualMemory(handle, (void *)(target + OFFSET_X), &ti.x, 4, 0);
             ZwReadVirtualMemory(handle, (void *)(target + OFFSET_X + 4), &ti.y, 4, 0);
@@ -427,7 +459,10 @@ void shining_nation::ci_bot::stop() {
 
 // initializings
 void shining_nation::init_range() {
-    // need implementation
+    ZwWriteVirtualMemory(_handle, (void *)_range_addr,
+        "\xA1\x4C\x8E\x56\x00\x89\x44\x24\x0C\x90\x90\x90\x90\x90\x90\x90\x90",
+        17, 0, true);
+    ZwWriteVirtualMemory(_handle, (void *)(_range_addr +1), &_range_nr_addr, 4, 0, true);
 }
 
 void shining_nation::init_perin_convert_spam() {
@@ -435,7 +470,37 @@ void shining_nation::init_perin_convert_spam() {
 }
 
 void shining_nation::init_select() {
-    
+    unsigned long pointed;
+    unsigned long to_back;
+    unsigned long to_detour;
+
+    VirtualProtectEx(_handle, (void *)_anti_mem_select_addr, 38+8, PAGE_EXECUTE_READWRITE, (LPDWORD)&pointed);
+    ZwWriteVirtualMemory(_handle, (void *)_anti_mem_select_addr,
+        "\xEB\x1F\xA1\xE8\x2A\x8C\x0A\x8B\x80\xF0\x02\x00\x00\x6A\x02\x50\xB9\xD8\xA7\xA0\x00\xE8\x4E\x90\xB2\xFF\xC6\x05\x18\xBE\x8F\x00\xEB\x8B\x8C\x24\xDC\x00\x00\x00\xE9\xB0\x73\xC7\xFF\x90",
+        38+8, 0);
+
+    // getting pointed select addr
+    ZwReadVirtualMemory(_handle, (void *)(_select_addr), &pointed, 4, 0);
+    pointed += OFFSET_SELECT;
+    // andr writin it
+    ZwWriteVirtualMemory(_handle, (void *)(_anti_mem_select_addr +3), &pointed, 4, 0);
+    ZwWriteVirtualMemory(_handle, (void *)(_anti_mem_select_addr + 0x11), &_anti_mem_select_ecx, 4, 0);
+    // calculating call from detured func
+    _anti_mem_select_call -= _anti_mem_select_addr + 0x16 + 4;
+    ZwWriteVirtualMemory(_handle, (void *)(_anti_mem_select_addr + 0x16), &_anti_mem_select_call, 4, 0);
+    // calculating back to original func
+    to_back = _anti_mem_select_detour_start - (_anti_mem_select_addr + 0x28) + 7 - 5;
+    ZwWriteVirtualMemory(_handle, (void *)(_anti_mem_select_addr + 0x28 +1), &to_back, 4, 0);
+
+    ZwWriteVirtualMemory(_handle, (void *)_anti_mem_select_detour_start, "\xE9\x25\x8C\x38\x00\x90\x90", 7, 0);
+    // calculating to detour function
+    to_detour = _anti_mem_select_addr - _anti_mem_select_detour_start - 5;
+    ZwWriteVirtualMemory(_handle, (void *)(_anti_mem_select_detour_start +1), &to_detour, 4, 0);
+
+}
+
+void shining_nation::init_no_collision() {
+    ZwWriteVirtualMemory(_handle, (void *)_anti_no_collision_addr, "\xEB", 1, 0, true);
 }
 
 

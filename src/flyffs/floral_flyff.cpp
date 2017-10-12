@@ -235,6 +235,8 @@ void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long bas
             localPlayer->no_collision_addr = _no_collision_addr;
             localPlayer->range_nr_addr = _range_nr_addr;
 
+            localPlayer->max_range = 99999999.f;
+
             bot->parent = this;
             bot->handle = _handle;
             bot->maxInView_addr = _maxInView_addr;
@@ -272,7 +274,7 @@ void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long bas
 //////////////////// localPlayer \\\\\\\\\\\\\\\\\\\\
 // ------------------------------------------------- gets
 void floral_flyff::ci_localPlayer::get_name(char *name) {
-	memcpy(&*name, "Floral Flyff: cant get name", 28);
+    memcpy(&*name, "Floral Flyff: can't get name", 29);
 
 	if (OFFSET_NAME != 0)
 		ZwReadVirtualMemory(handle, (void *)(get_me() + OFFSET_NAME), &*name + 14, 255 -14, 0);
@@ -334,9 +336,12 @@ void floral_flyff::ci_localPlayer::set_no_collision(bool state) {
         ZwWriteVirtualMemory(handle, (void *)(no_collision_addr), "\x01", 1, 0, true);
 }
 
-void floral_flyff::ci_localPlayer::set_range(float f) {
+float floral_flyff::ci_localPlayer::set_range(float f) {
     // set range number
     ZwWriteVirtualMemory(handle, (void *)(range_nr_addr), &f, 4, 0);
+
+    // return actual value that we wrote
+    return f;
 }
 
 // ------------------------------------------------- something to do

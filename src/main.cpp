@@ -154,8 +154,9 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 					free(f);
 				}
 
-				if (pids.size() > 0)
-                    SendMessage(hwnd, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
+                // select first character if any
+                if (pids.size() > 0)
+                    SendMessage(GetDlgItem(hDlg, IDC_COMBO_PLAYERS), CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
 			} else {
                 int begin, end;
                 double d;
@@ -318,11 +319,12 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 					// convert it to float and then print it out
 					nr_range = atof(txt_buf);
-					sprintf(txt_buf, "%f\n", nr_range);
-					printf("setting range to: %s", txt_buf);
+                    printf("setting range to: %f\n", nr_range);
 
 					// set range and change edittext value of converted val
-					fCurrentTab->localPlayer->set_range(nr_range);
+                    nr_range = fCurrentTab->localPlayer->set_range(nr_range);
+
+                    sprintf(txt_buf, "%f", nr_range);
 					SetWindowText(hwnd, txt_buf);
 
 					break;
@@ -337,7 +339,8 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 							fCurrentTab->bot->get_target_lvls(&begin, &end);
                             
                             // if really changed, then only change in class too
-                            if (nr_lvl != begin) {
+                            // and is it bigger then 0
+                            if (nr_lvl != begin && nr_lvl > 0) {
                                 fCurrentTab->bot->set_target_lvls(nr_lvl);
                                 
                                 if (fCurrentTab->bot->get_run())
@@ -481,7 +484,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 						if (fCurrentTab->run(false))
 							show_noti((char *)texts::noti_reenable_bot, 6000);
 					} break;
-				}
+				}*/
 				case IDC_EDIT_RESELECT_AFTER: {
 					switch (HIWORD(wParam)) {
 						case EN_CHANGE: {
@@ -491,24 +494,24 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 							begin = atoi(txt_buf);
 
 							// if really changed, then only change in class too
-							if (fCurrentTab->get_reselect_after() != begin) {
-								fCurrentTab->set_reselect_after(begin);
+							if (fCurrentTab->bot->get_reselect_after() != begin) {
+								fCurrentTab->bot->set_reselect_after(begin);
 
-								if (fCurrentTab->run(false))
+								if (fCurrentTab->bot->get_run())
 									show_noti((char *)texts::noti_reenable_bot, 6000);
 							} break;
 						}
 						case EN_KILLFOCUS: {
 							int begin;
 
-							begin = fCurrentTab->get_reselect_after();
+							begin = fCurrentTab->bot->get_reselect_after();
 							sprintf(txt_buf, "%d", begin);
 							SetWindowText((HWND)lParam, txt_buf);
 
 							break;
 						}
 					} break;
-				}
+				}/*
 				case IDC_COMBO_HP_KEYS: {
 					if (HIWORD(wParam) == CBN_SELCHANGE) {
 						i = SendMessage((HWND)lParam, (UINT)CB_GETCURSEL, (WPARAM)0, (LPARAM)0);
