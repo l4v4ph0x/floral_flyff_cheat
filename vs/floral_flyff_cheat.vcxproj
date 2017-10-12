@@ -50,7 +50,7 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -83,6 +83,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)../</OutDir>
+    <TargetName>floral_flyff_cheat</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -142,6 +144,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\a\flyff.h" />
+    <ClInclude Include="..\src\flyffs\floral_flyff.h" />
+    <ClInclude Include="..\src\flyffs\shining_nation.h" />
     <ClInclude Include="..\src\h\flyff.h" />
     <ClInclude Include="..\src\h\gToolTip.h" />
     <ClInclude Include="..\src\h\losu.h" />
@@ -154,6 +159,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\flyff.cpp" />
+    <ClCompile Include="..\src\flyffs\floral_flyff.cpp" />
+    <ClCompile Include="..\src\flyffs\shining_nation.cpp" />
     <ClCompile Include="..\src\gToolTip.cpp" />
     <ClCompile Include="..\src\low_functions.cpp" />
     <ClCompile Include="..\src\main.cpp" />

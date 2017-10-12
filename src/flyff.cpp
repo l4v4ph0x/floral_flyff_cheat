@@ -1,3 +1,4 @@
+/*
 #include "h/flyff.h"
 #include "h/losu.h"
 #include "h/summoner.h"
@@ -13,14 +14,22 @@
 //Neuz.exe + 5E5490, makes most of items very big, 
 //    so to bot make this float val to 0and just run autoclicker on screen because targets are mega big
 
-unsigned long OFFSET_SELECT = 0x20;             // type = 4 bytes
-unsigned long OFFSET_X = 0x188;                 // type = float
-unsigned long OFFSET_LVL = 0x79C + 8;           // type = 4 bytes
-unsigned long OFFSET_IS_DEAD = 0x900 + 8;       // 255 = alive, 6 = dead, type = 1 byte
-unsigned long OFFSET_TYPE_PET = 0x7EC + 8;      // type = 1 byte, 19 = pet, 0 = npc, 3 = aibatt
-unsigned long OFFSET_NAME = 0x1890 + 8;         // char array
-unsigned long OFFSET_ID = 0x3F4;				// 4 byte int
-unsigned long OFFSET_MONEY = 0x1884 + 8;		// 5 byte array int
+unsigned long FLORAL_OFFSET_SELECT = 0x20;              // type = 4 bytes
+unsigned long FLORAL_OFFSET_X = 0x188;                  // type = float
+unsigned long FLORAL_OFFSET_LVL = 0x79C + 8;            // type = 4 bytes
+unsigned long FLORAL_OFFSET_IS_DEAD = 0x900 + 8;        // 255 = alive, 6 = dead, type = 1 byte
+unsigned long FLORAL_OFFSET_TYPE_PET = 0x7EC + 8;		// type = 1 byte, 19 = pet, 0 = npc, 3 = aibatt
+unsigned long FLORAL_OFFSET_NAME = 0x1890 + 8;			// char array
+unsigned long FLORAL_OFFSET_ID = 0x3F4;					// 4 byte int
+unsigned long FLORAL_OFFSET_MONEY = 0x1884 + 8;			// 4 byte array int
+
+unsigned long SHININGNATION_OFFSET_SELECT = 0x20;		// type = 4 bytes
+unsigned long SHININGNATION_OFFSET_X = 0x160;			// type = float
+unsigned long SHININGNATION_OFFSET_LVL = 0x6EC;			// type = 4 bytes
+unsigned long SHININGNATION_OFFSET_HP = 0x710;			// type 4 bytes
+//unsigned long SHININGNATION_OFFSET_TYPE_PET = 
+unsigned long SHININGNATION_OFFSET_MONEY = 0x1638;		// 4 bytes int
+
 
 // no class functinos
 unsigned long __stdcall _thread_select_target(void *t) {
@@ -75,16 +84,17 @@ unsigned long __stdcall _thread_select_target(void *t) {
             PostMessage((HWND)f.get_hwnd(), WM_KEYDOWN, VK_RIGHT, MapVirtualKey(VK_RIGHT, MAPVK_VK_TO_VSC));
             Sleep(50);
             PostMessage((HWND)f.get_hwnd(), WM_KEYUP, VK_RIGHT, MapVirtualKey(VK_RIGHT, MAPVK_VK_TO_VSC));
+			Sleep(50);
 			f.thread_uing = false;
         } else {
             // get key to use
             if (f.getKey(&k)) {
                 // send key to window
 				f.thread_uing = true;
-                Sleep(20);
                 PostMessage((HWND)f.get_hwnd(), WM_KEYDOWN, k.code, MapVirtualKey(k.code, MAPVK_VK_TO_VSC));
                 Sleep(50);
                 PostMessage((HWND)f.get_hwnd(), WM_KEYUP, k.code, MapVirtualKey(k.code, MAPVK_VK_TO_VSC));
+				Sleep(50);
 				f.thread_uing = false;
             }
 
@@ -119,6 +129,12 @@ unsigned long __stdcall _thread_perin_converter(void *t) {
 			else f.enable_perin_convert_spam(false);
 		//}
 	}
+}
+
+unsigned long __stdcall _thread_hper(void *t) {
+	flyff f;
+
+	f = *((flyff *)t); // main class for every client
 }
 
 // end of no class functinos
@@ -158,6 +174,7 @@ void flyff::load(void *handle, unsigned long base_addr, unsigned long base_size)
     _vars._h_select_thread = nullptr;
     
 	printf("Searcing for flyff ... ");
+
     if (search(handle, base_addr, base_size, "Floral Flyff", 12, 1) != 0) {
 		printf("Floral Flyff | Done\n");
         _vars._base_addr = base_addr;
@@ -190,6 +207,17 @@ void flyff::load(void *handle, unsigned long base_addr, unsigned long base_size)
 		init_perin_convert_spam();
 		
 
+		OFFSET_SELECT = FLORAL_OFFSET_SELECT;
+		OFFSET_X = FLORAL_OFFSET_X;
+		OFFSET_LVL = FLORAL_OFFSET_LVL;
+		OFFSET_HP = 0; // havent found it for floral flyff
+		OFFSET_IS_DEAD = FLORAL_OFFSET_IS_DEAD;
+		OFFSET_TYPE_PET = FLORAL_OFFSET_TYPE_PET;
+		OFFSET_NAME = FLORAL_OFFSET_NAME;
+		OFFSET_ID = FLORAL_OFFSET_ID;
+		OFFSET_MONEY = FLORAL_OFFSET_MONEY;
+
+
         // { - waiting _select_addr to point
         printf("waiting when _select_addr points ... ");
         for (addr = 0; !addr; Sleep(20))
@@ -215,7 +243,55 @@ void flyff::load(void *handle, unsigned long base_addr, unsigned long base_size)
         set_killed_count(0);
         memset(_vars._saved_pos, '\x00', 12);
 		set_reselect_after(0);
-    } else {
+	} else if (search(handle, base_addr, base_size, "Shining Nation", 12, 1) != 0) {
+		printf("Shining Nation Project | Done\n");
+		_vars._base_addr = base_addr;
+		_vars._handle = handle;
+
+		_vars._select_addr = base_addr + 0x617280;
+		_vars._maxInView_addr = base_addr + 0x88D698;
+		_vars._targetBase_addr = base_addr + 0x887108;
+		_vars._me_addr = base_addr + 0x6131E0;
+
+		init_perin_convert_spam();
+
+		OFFSET_SELECT = SHININGNATION_OFFSET_SELECT;
+		OFFSET_X = SHININGNATION_OFFSET_X;
+		OFFSET_LVL = SHININGNATION_OFFSET_LVL;
+		OFFSET_HP = SHININGNATION_OFFSET_HP;
+		OFFSET_IS_DEAD = 0; // no need since we have offset hp
+		OFFSET_TYPE_PET = 0; // havent found it yet
+		OFFSET_NAME = 0;
+		OFFSET_ID = 0;
+		OFFSET_MONEY = SHININGNATION_OFFSET_MONEY;
+
+
+		// { - waiting _select_addr to point
+		printf("waiting when _select_addr points ... ");
+		for (addr = 0; !addr; Sleep(20))
+			ZwReadVirtualMemory(_vars._handle, (void *)(_vars._select_addr), &addr, 4, 0);
+		printf("%08X | Done\n", addr + OFFSET_SELECT);
+		// end of waiting _select_add to point - }
+
+
+		// { - waiting _me_addr to point
+		printf("waiting when _me_addr points ... ");
+		for (addr = 0; !addr; Sleep(20))
+			addr = getMe();
+		printf("%08X | Done\n", addr);
+		// end of waiting _me_addr to point - }
+
+		// printing some local vars
+		printf("local money: %d\n", get_local_money());
+		get_local_name(buf);
+		printf("local name: %s\n", buf);
+
+		// nulling some vars
+		set_kill_to_home(0);
+		set_killed_count(0);
+		memset(_vars._saved_pos, '\x00', 12);
+		set_reselect_after(0);
+	} else {
         error_string = (char *)texts::error_wrong_flyff;
     }
 }
@@ -238,7 +314,7 @@ bool flyff::run(bool run) {
 }
 void flyff::stop() {
 	// waiting for thread to finish all keypresses
-	for (; thread_uing; Sleep(50));
+	for (Sleep(50); thread_uing; Sleep(50));
     // terminating target selecting and killing thread and nulling vars
     TerminateThread(_vars._h_select_thread, 0);
     _vars._h_select_thread = nullptr;
@@ -251,24 +327,64 @@ void flyff::set_hwnd(void *hwnd) { _vars._hwnd = hwnd; }
 void *flyff::get_hwnd() { return _vars._hwnd; }
 
 void flyff::get_local_name(char *name) {
-    ZwReadVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_NAME), &*name, 255, 0);
+	memcpy(&*name, "cant get name", 14);
+
+	if (OFFSET_NAME != 0)
+		ZwReadVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_NAME), &*name, 255, 0);
 }
 unsigned int flyff::get_local_money() {
-	unsigned int money;
-	ZwReadVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_MONEY), &money, 4, 0);
+	unsigned int money = 0;
+
+	if (OFFSET_MONEY != 0)
+		ZwReadVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_MONEY), &money, 4, 0);
+
 	return money;
+}
+
+bool flyff::is_target_pet(unsigned long target) {
+	unsigned long type_pet = 0;
+
+	if (OFFSET_TYPE_PET != 0)
+		ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_TYPE_PET), &type_pet, 1, 0);
+
+	return type_pet == 19;
+}
+
+int flyff::get_target_hp(unsigned long target) {
+	unsigned int hp = 0;
+
+	if (OFFSET_HP != 0)
+		ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_HP), &hp, 4, 0);
+
+	return hp;
+}
+
+bool flyff::is_target_dead(unsigned long target) {
+	unsigned long is_dead = 255;
+
+	if (OFFSET_IS_DEAD != 0)
+		ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_IS_DEAD), &is_dead, 1, 0);
+
+	return is_dead == 255;
 }
 
 void flyff::select(unsigned long target) {
 	unsigned long pointed = 0;
-	ZwReadVirtualMemory(_vars._handle, (void *)(_vars._select_addr), &pointed, 4, 0);
-	ZwWriteVirtualMemory(_vars._handle, (void *)(pointed + OFFSET_SELECT), &target, 4, 0);
+
+	if (OFFSET_SELECT != 0) {
+		ZwReadVirtualMemory(_vars._handle, (void *)(_vars._select_addr), &pointed, 4, 0);
+		ZwWriteVirtualMemory(_vars._handle, (void *)(pointed + OFFSET_SELECT), &target, 4, 0);
+	}
 }
 
 unsigned long flyff::getSelect() {
 	unsigned long pointed = 0;
-	ZwReadVirtualMemory(_vars._handle, (void *)(_vars._select_addr), &pointed, 4, 0);
-	ZwReadVirtualMemory(_vars._handle, (void *)(pointed + OFFSET_SELECT), &pointed, 4, 0);
+
+	if (OFFSET_SELECT != 0) {
+		ZwReadVirtualMemory(_vars._handle, (void *)(_vars._select_addr), &pointed, 4, 0);
+		ZwReadVirtualMemory(_vars._handle, (void *)(pointed + OFFSET_SELECT), &pointed, 4, 0);
+	}
+
 	return pointed;
 }
 
@@ -279,9 +395,14 @@ unsigned long flyff::getMe() {
 }
 
 float flyff::getHyp(targetInfo ti) {
-	float x, z;
-	ZwReadVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_X), &x, 4, 0);
-	ZwReadVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_X +8), &z, 4, 0);
+	float x = 0,
+		  z = 0;
+
+	if (OFFSET_X != 0) {
+		ZwReadVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_X), &x, 4, 0);
+		ZwReadVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_X +8), &z, 4, 0);
+	}
+
 	return sqrt((x - ti.x) * (x - ti.x) + (z - ti.z) * (z - ti.z));
 }
 
@@ -290,8 +411,6 @@ flyff::targetInfo flyff::getClosestTargetInView() {
     unsigned long target;
     unsigned long type;
     unsigned long lvl;
-    unsigned char is_dead;
-    unsigned long type_pet;
     
 	targetInfo closest_ti;
     
@@ -307,18 +426,15 @@ flyff::targetInfo flyff::getClosestTargetInView() {
 		target = 0;
         type = 0;
         lvl = 0;
-        is_dead = 0;
-        type_pet = 0;
 
 		ZwReadVirtualMemory(_vars._handle, (void *)(i * 4 + _vars._targetBase_addr), &target, 4, 0);
 		ZwReadVirtualMemory(_vars._handle, (void *)(target + 8), &type, 4, 0);
 		ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_LVL), &lvl, 4, 0);
-		ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_IS_DEAD), &is_dead, 1, 0);
-		ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_TYPE_PET), &type_pet, 1, 0);
 
-        //printf("base: %08X\ntarget: %08X\ntype: %d\nlvl: %d\nis_dead: %d\n", i * 4 + _vars._targetBase_addr, target, type, lvl, is_dead);
+		//printf("offset hp: %08X\n",  OFFSET_HP);
+        //printf("base: %08X\ntarget: %08X\ntype: %d\nlvl: %d\nis_dead: %d\nhp: %d\npet: %d\n", i * 4 + _vars._targetBase_addr, target, type, lvl, is_target_dead(target), get_target_hp(target), is_target_pet(target));
         
-		if (type == 18 && lvl >= _vars._target_lvl_begin && lvl <= _vars._target_lvl_end && is_dead == 255 && type_pet != 19 && type_pet != 0) {
+		if (type == 18 && lvl >= _vars._target_lvl_begin && lvl <= _vars._target_lvl_end && (is_target_dead(target) && get_target_hp(target) > 0) && !is_target_pet(target)) {
 			targetInfo ti;
 			ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_X), &ti.x, 4, 0);
 			ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_X +4), &ti.y, 4, 0);
@@ -371,15 +487,19 @@ void flyff::get_target_lvls(int *begin, int *end) {
 
 void flyff::teleport_to_target(unsigned long target) {
 	unsigned char pos[12];
-	ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_X), &pos, 12, 0);
-	*(float *)(pos +4) += 2.f;
-	ZwWriteVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_X), &pos, 12, 0);
+
+	if (OFFSET_X != 0) {
+		ZwReadVirtualMemory(_vars._handle, (void *)(target + OFFSET_X), &pos, 12, 0);
+		*(float *)(pos +4) += 2.f;
+		ZwWriteVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_X), &pos, 12, 0);
+	}
 }
 
 void flyff::save_location(unsigned char *loc) {
     // if loc is null then getting local player pos, else given loc
     if (loc == nullptr)
-        ZwReadVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_X), &_vars._saved_pos, 12, 0);
+		if (OFFSET_X != 0)
+			ZwReadVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_X), &_vars._saved_pos, 12, 0);
     else memcpy(_vars._saved_pos, loc, 12);
     
 	*(float *)(_vars._saved_pos +4) += 2.f;
@@ -391,7 +511,8 @@ void flyff::get_location(unsigned char *loc) {
 }
 
 void flyff::teleport_to_saved_pos() {
-	ZwWriteVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_X), &_vars._saved_pos, 12, 0);
+	if (OFFSET_X != 0)
+		ZwWriteVirtualMemory(_vars._handle, (void *)(getMe() + OFFSET_X), &_vars._saved_pos, 12, 0);
 }
 
 double flyff::get_killed_count() { return _vars._killed_count; }
@@ -466,6 +587,13 @@ int flyff::get_reselect_after() {
 	return _vars.reselect_after;
 }
 
+void flyff::set_hp_key_code(unsigned long code) {
+	_vars.hp_key_code = code;
+}
+unsigned long flyff::get_hp_key_code() {
+	return _vars.hp_key_code;
+}
+
 
 void flyff::set_hwnd_noti(void *hwnd) {
     hwnd_noti = hwnd;
@@ -473,3 +601,4 @@ void flyff::set_hwnd_noti(void *hwnd) {
 void *flyff::get_hwnd_noti() {
     return hwnd_noti;
 }
+*/

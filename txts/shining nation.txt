@@ -1,0 +1,49 @@
+// place i got to signature scanning
+0019FAE0  84 7A 4D 00                                      „zM.
+// return addr
+004D7A84
+
+0070DB2D    6A 02           PUSH 2
+0070DB2F    51              PUSH ECX
+0070DB30    B9 D8A7A000     MOV ECX,Neuz.00A0A7D8
+0070DB35    E8 4673D1FF     CALL Neuz.00424E80
+
+// chekin 2 difference addres match
+048277DC
+048277DC
+
+// code to bypass ant mem select
+mov ecx,[esi+000002F0]
+push 02
+push ecx
+mov ecx,00A0A7D8
+call 00424E80
+
+// ant mem select down to bytes
+anti mem select bypass
+008FBE18     /EB 1F         JMP SHORT Neuz.008FBE39
+EB 1F A1 E8 2A 8C 0A 8B 80 F0 02 00 00 6A 02 50 B9 D8 A7 A0 00 E8 4E 90 B2 FF C6 05 18 BE 8F 00
+EB 8B 8C 24 DC 00 00 00 E9 B0 73 C7 FF 90
+005731EE    8B8C24 DC000000      MOV ECX,DWORD PTR SS:[ESP+DC]
+005731F5    5F                   POP EDI                                  ; 0019FC34
+
+// some addrs calc
+to_detour: 00388C25 = 008FBE18(detour func addr)-005731EE(original place)-5(size of jmp opcode)
+to_back: FFC773B0 = 005731EE(where do we jump)-008FBE40(where we jump)+7(len of of opcode we replaced)-5(jmp opcode len)
+
+// chekin 2 difference addres match
+0210E8C0
+0210E8C0
+
+// something pushed to stack
+000000B9
+
+
+
+// range number addr
+Neuz.exe+168E4C (00568E4C)
+
+// no collision
+00731BE9   /75 35                      JNZ SHORT Neuz.00731C20
+
+
