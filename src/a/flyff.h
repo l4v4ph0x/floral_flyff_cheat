@@ -91,6 +91,8 @@ class flyff {
             bool thread_uing;
             double killed_count;
             double kill_to_home;
+
+			unsigned long bad_target;
             // < vars
 
             // get

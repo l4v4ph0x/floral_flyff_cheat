@@ -49,7 +49,7 @@ unsigned long __stdcall shining_nation::_thread_select_target(void *t) {
 
             // select target if any
             ti = f->bot->get_closest_target_in_view();
-            if (ti.base != 0 && ti.base != bad_target) {
+            if (ti.base != 0) {
                 printf("selecting closest target: %08X\n", ti.base);
                 f->localPlayer->select(ti.base);
 
@@ -60,6 +60,9 @@ unsigned long __stdcall shining_nation::_thread_select_target(void *t) {
                     f->localPlayer->teleport_to_target(ti);
 
                 killed = false;
+
+				// unselecting bad target
+				f->bot->bad_target = 0;
 
                 // setting bot status text to attacking
                 SetWindowText((HWND)f->ui->get_hwnd_noti(), (char *)texts::noti_bot_attacking_target);
@@ -88,7 +91,8 @@ unsigned long __stdcall shining_nation::_thread_select_target(void *t) {
 
                 if (time_selected + f->bot->get_reselect_after() < now) {
                     // if we passed time we had to kill target then select 0
-                    bad_target = f->localPlayer->get_select();
+					f->bot->bad_target = f->localPlayer->get_select();
+
                     f->localPlayer->select(0);
 
                     printf("couldn't killd in %d seconds, reselcting target\n", f->bot->get_reselect_after());
@@ -157,30 +161,47 @@ void shining_nation::load(void *handle, unsigned long base_addr, unsigned long b
         _base_addr = base_addr;
         _handle = handle;
 
-        _select_addr = base_addr + 0x617280;
-        _maxInView_addr = base_addr + 0x88D698;
-        _targetBase_addr = base_addr + 0x887108;
-        _me_addr = base_addr + 0x6131E0;
+		//old 0x617280 (dif: +41F0)
+		// updated 11.11.2017(m.d.y)
+        _select_addr = base_addr + 0x61B470;
+		//old 0x88D698 (dif: +4FA0)
+		// updated 11.11.2017(m.d.y)
+        _maxInView_addr = base_addr + 0x892638;
+		// old 0x887108 (dif: +4FA0)
+		// updated 11.11.2017(m.d.y)
+        _targetBase_addr = base_addr + 0x887108 + 0x4FA0;
+		// old 0x6131E0 (dif: +4040)
+		// updated 11.11.2017(m.d.y)
+        _me_addr = base_addr + 0x617220;
 
-        _range_addr = base_addr + 0x006AB9FC - 0x00400000;
-        _range_all_addr = base_addr + 0x006ABCFF - 0x00400000;
-        _range_nr_addr = base_addr + 0x168E4C;
+		// old 0x006AB9FC - 0x00400000 = 0x2AB9FC (dif: +2FE0)
+		// updated 11.11.2017(m.d.y)
+        _range_addr = base_addr + 0x2AE9DC;
+		// old 0x006ABCFF - 0x00400000 = 0x2ABCFF (dif: +2FE0)
+		// updated 11.11.2017(m.d.y)
+        _range_all_addr = base_addr + 0x006ABCFF - 0x00400000 + 0x2FE0;
+		// old 0x168E4C (dif: +1B40)
+		// updated 11.11.2017(m.d.y)
+        _range_nr_addr = base_addr + 0x16A98C;
         
-        _anti_mem_select_addr = base_addr + 0x008FBE18 - 0x00400000;
-        _anti_mem_select_call = base_addr + 0x00424E80 - 0x00400000;
-        _anti_mem_select_ecx = base_addr + 0x0A0A7D8 - 0x00400000;
-        _anti_mem_select_detour_start = base_addr + 0x005731EE - 0x00400000;
+		// old 0x008FBE18 - 0x00400000 = 0x4FBE18 (dif: +3350)
+		// updated 11.11.2017(m.d.y)
+        _anti_mem_select_addr = base_addr + 0x4FF168;
+		// old 0x00424E80 - 0x00400000 = 0x24E80 (div: +120)
+		// updated 11.11.2017(m.d.y)
+		_anti_mem_select_call = base_addr + 0x24FA0;
+		// old 0x0A0A7D8 - 0x00400000 = 0x60A7D8 (dif: +4040)
+		// updated 11.11.2017(m.d.y)
+		_anti_mem_select_ecx = base_addr + 0x60E818;
+		// old 0x005731EE - 0x00400000 = 0x1731EE (dif: ?)
+        _anti_mem_select_detour_start = base_addr + 0x310F9B; // *new
 
-        _no_collision_addr = base_addr + 0x9F7B74 - 0x00400000;
-        _anti_no_collision_addr = base_addr + 0x00731BE9 - 0x00400000;
-
-        // need implementation
-        //init_range();
-        // need implementation
-        //init_perin_convert_spam();
-        init_select();
-        init_no_collision();
-        init_range();
+		// old 0x9F7B74 - 0x00400000 = 0x5F7B74 (dif: +4028)
+		// updated 11.11.2017(m.d.y)
+        _no_collision_addr = base_addr + 0x5FBB9C;
+		// old 0x00731BE9 - 0x00400000 = 0x331BE9 (dif: +31D0)
+		// updated 11.11.2017(m.d.y)
+        _anti_no_collision_addr = base_addr + 0x334DB9;
 
         // { - waiting _select_addr to point
         printf("waiting when _select_addr points ... ");
@@ -220,6 +241,12 @@ void shining_nation::load(void *handle, unsigned long base_addr, unsigned long b
         printf("local money: %d\n", localPlayer->get_money());
         localPlayer->get_name(buf);
         printf("local name: %s\n", buf);
+
+		// need implementation
+		//init_perin_convert_spam();
+		init_select();
+		init_no_collision();
+		init_range();
 
         // nulling some vars
         bot->h_select_thread = nullptr;
@@ -392,7 +419,7 @@ flyff::targetInfo shining_nation::ci_bot::get_closest_target_in_view() {
         //printf("base: %08X\ntarget: %08X\ntype: %d\nlvl: %d\n", 
         //s    i * 4 + targetBase_addr, target, type, lvl);
 
-        if (type == 18 && lvl >= target_lvl_begin && lvl <= target_lvl_end && hp > 1 && pet_type != 19) {
+        if (type == 18 && lvl >= target_lvl_begin && lvl <= target_lvl_end && hp > 1 && pet_type != 19 && target != bad_target) {
             targetInfo ti;
             ZwReadVirtualMemory(handle, (void *)(target + OFFSET_X), &ti.x, 4, 0);
             ZwReadVirtualMemory(handle, (void *)(target + OFFSET_X + 4), &ti.y, 4, 0);
@@ -465,6 +492,8 @@ void shining_nation::init_range() {
         17, 0, true);
     ZwWriteVirtualMemory(_handle, (void *)(_range_addr + 1), &_range_nr_addr, 4, 0, true);
     ZwWriteVirtualMemory(_handle, (void *)(_range_all_addr), "\x90\x90", 2, 0, true);
+
+	localPlayer->set_range(0.f);
 }
 
 void shining_nation::init_perin_convert_spam() {
@@ -478,7 +507,7 @@ void shining_nation::init_select() {
 
     VirtualProtectEx(_handle, (void *)_anti_mem_select_addr, 38+8, PAGE_EXECUTE_READWRITE, (LPDWORD)&pointed);
     ZwWriteVirtualMemory(_handle, (void *)_anti_mem_select_addr,
-        "\xEB\x1F\xA1\xE8\x2A\x8C\x0A\x8B\x80\xF0\x02\x00\x00\x6A\x02\x50\xB9\xD8\xA7\xA0\x00\xE8\x4E\x90\xB2\xFF\xC6\x05\x18\xBE\x8F\x00\xEB\x8B\x8C\x24\xDC\x00\x00\x00\xE9\xB0\x73\xC7\xFF\x90",
+        "\xEB\x1F\xA1\xE8\x2A\x8C\x0A\x8B\x80\xF0\x02\x00\x00\x6A\x02\x50\xB9\xD8\xA7\xA0\x00\xE8\x4E\x90\xB2\xFF\xC6\x05\x68\xF1\x8F\x00\xEB\xA1\x30\x27\xC9\x00\x90\x90\xE9\xB0\x73\xC7\xFF\x90",
         38+8, 0);
 
     // getting pointed select addr
@@ -491,10 +520,10 @@ void shining_nation::init_select() {
     _anti_mem_select_call -= _anti_mem_select_addr + 0x16 + 4;
     ZwWriteVirtualMemory(_handle, (void *)(_anti_mem_select_addr + 0x16), &_anti_mem_select_call, 4, 0);
     // calculating back to original func
-    to_back = _anti_mem_select_detour_start - (_anti_mem_select_addr + 0x28) + 7 - 5;
+    to_back = _anti_mem_select_detour_start - (_anti_mem_select_addr + 0x28) + 5 - 5;
     ZwWriteVirtualMemory(_handle, (void *)(_anti_mem_select_addr + 0x28 +1), &to_back, 4, 0);
 
-    ZwWriteVirtualMemory(_handle, (void *)_anti_mem_select_detour_start, "\xE9\x25\x8C\x38\x00\x90\x90", 7, 0);
+    ZwWriteVirtualMemory(_handle, (void *)_anti_mem_select_detour_start, "\xE9\x25\x8C\x38\x00", 5, 0);
     // calculating to detour function
     to_detour = _anti_mem_select_addr - _anti_mem_select_detour_start - 5;
     ZwWriteVirtualMemory(_handle, (void *)(_anti_mem_select_detour_start +1), &to_detour, 4, 0);
