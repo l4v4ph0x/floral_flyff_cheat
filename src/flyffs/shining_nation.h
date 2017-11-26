@@ -40,9 +40,14 @@ class shining_nation : public flyff {
         unsigned long _perin_convert_spam_write_addr;
         unsigned long _perin_convert_spam_ecx;
         void *_h_select_thread;
+		void *_h_hper_thread;
         // < end of vars
 
-        static unsigned long __stdcall _thread_select_target(void *t);
+		// threads
+		static unsigned long __stdcall _thread_select_target(void *t);
+		static unsigned long __stdcall _thread_hper(void *t);
+
+		// were no class funcs
         static float get_hyp(flyff *f, flyff::targetInfo ti);
         void load(void *handle, unsigned long base_addr, unsigned long base_size);
 
@@ -57,6 +62,7 @@ class shining_nation : public flyff {
             // get
             void get_name(char *name);
             unsigned int get_money();
+			unsigned int get_hp();
             unsigned long c_localPlayer::get_me();
             unsigned long get_select();
             void get_location(unsigned char *loc);
@@ -87,9 +93,17 @@ class shining_nation : public flyff {
             void stop();
         };
 
+		class ci_buff : public c_buff {
+			// get
+			bool get_run();
+
+			// do
+			void run(bool state);
+		};
+
         void init_range();
         void init_perin_convert_spam();
-        void init_select();
+        void init_select(unsigned char *detourReplaceBytes);
         void init_no_collision();
 
         // miscs

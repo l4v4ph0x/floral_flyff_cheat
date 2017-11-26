@@ -3,11 +3,13 @@
 
 #include <vector>
 
+
 class flyff {
 	public:
 		struct key {
 			unsigned char code;
 			float priority;
+			bool isSet = false;
 
             // contructors
             key() {
@@ -17,6 +19,7 @@ class flyff {
             key(unsigned char code, float priority) {
                 this->code = code;
                 this->priority = priority;
+				isSet = true;
             }
 		};
 
@@ -55,6 +58,7 @@ class flyff {
             // get
 			virtual void get_name(char *name) = 0;
 			virtual unsigned int get_money() = 0;
+			virtual unsigned int get_hp() = 0;
 			virtual unsigned long get_me() = 0;
 			virtual unsigned long get_select() = 0;
 			virtual void get_location(unsigned char *loc) = 0; // 12 bytes
@@ -142,7 +146,35 @@ class flyff {
                 
         };
         
+		struct c_buff {
+			flyff *parent;
 
+			void *h_hper_thread;
+			bool thread_uing;
+
+			private:
+				int hp_to_buff = 0;
+				key hp_key;
+
+			public:
+				// get
+				bool get_hp_key(key *k) {
+					*k = hp_key;
+					if (!hp_key.isSet) return false;
+					return true;
+				};
+				int get_hp_to_buff() { return hp_to_buff; };
+				virtual bool get_run() = 0;
+
+				// set
+				void set_hp_key(key k) {
+					hp_key = k; 
+				};
+				void set_hp_to_buff(int hp) { hp_to_buff = hp; }
+
+				// do
+				virtual void run(bool state) = 0;
+		};
 	public:
         // miscs
         // set
@@ -159,6 +191,7 @@ class flyff {
 		c_localPlayer *localPlayer;
 		c_bot *bot;
         c_ui *ui = new c_ui();
+		c_buff *buff;
 };
 
 

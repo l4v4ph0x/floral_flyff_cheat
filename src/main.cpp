@@ -189,6 +189,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                 // load tele to target and back home
                 d = fCurrentTab->bot->get_kill_to_home();
                 if (d == 0) {
+					// unchecked at start anyway
                     // uncheck checkbox and edittext
                     //hwnd = GetDlgItem(hDlg, IDC_CHECBKOX_TELE_TARGET_HOME);
                     //SendMessage(hwnd, BM_SETCHECK, BST_UNCHECKED, 0);
@@ -229,6 +230,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                     SendMessage(hwnd, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
                     fCurrentTab->bot->add_update_attack_key(flyff::key(combo_items[0].val, 100.f));
                 } else {
+					printf("val: %08X\n", k.code);
                     for (i = 0; i < sizeof(combo_items) / sizeof(comboItem); i++) {
                         if (combo_items[i].val == k.code) {
                             SendMessage(hwnd, CB_SETCURSEL, (WPARAM)i, (LPARAM)0);
@@ -250,26 +252,33 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 				hwnd = GetDlgItem(hDlg, IDC_EDIT_RESELECT_AFTER);
 				sprintf(txt_buf, "%d", fCurrentTab->bot->get_reselect_after());
 				SetWindowText(hwnd, txt_buf);
-                /*
-				// adding items to combobox
+                
+				// { --- adding items to hper combobox
 				hwnd = GetDlgItem(hDlg, IDC_COMBO_HP_KEYS);
 
 				for (i = 0; i < sizeof(combo_items) / sizeof(comboItem); i++)
 					SendMessage(hwnd, CB_ADDSTRING, 0, (LPARAM)combo_items[i].name);
 
-				if (!fCurrentTab->getKey(&k)) {
-					SendMessage(hwnd, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
-					fCurrentTab->addUpdateAttackKey(combo_items[0].val, 100.f);
+				if (!fCurrentTab->buff->get_hp_key(&k)) {
+					SendMessage(hwnd, CB_SETCURSEL, (WPARAM)1, (LPARAM)0);
+					fCurrentTab->buff->set_hp_key(flyff::key(combo_items[1].val, 100.f));
 				} else {
+					printf("val: %08X\n", k.code);
 					for (i = 0; i < sizeof(combo_items) / sizeof(comboItem); i++) {
 						if (combo_items[i].val == k.code) {
 							SendMessage(hwnd, CB_SETCURSEL, (WPARAM)i, (LPARAM)0);
 							break;
 						}
 					}
-
 				}
-                */
+				// --- }
+
+				// set tp heal hp text
+				hwnd = GetDlgItem(hDlg, IDC_EDIT_HP);
+				sprintf(txt_buf, "%d", fCurrentTab->buff->get_hp_to_buff());
+				SetWindowText(hwnd, txt_buf);
+
+                
                 // setting toolstips(balloon versions)
                 //gToolTip::AddTip(hCurrentTab, HIthis, "Enter desired range number(in float). Ex: 100", IDC_EDIT_RANGE, true);
                 //gToolTip::AddTip(hTabControl, HIthis, "Enter desired lowest level to select. Ex: 1", IDC_EDIT_TARGET_LVL_BEGIN, true);
@@ -511,15 +520,45 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 							break;
 						}
 					} break;
-				}/*
+				}
 				case IDC_COMBO_HP_KEYS: {
 					if (HIWORD(wParam) == CBN_SELCHANGE) {
 						i = SendMessage((HWND)lParam, (UINT)CB_GETCURSEL, (WPARAM)0, (LPARAM)0);
 
 						printf("selected f key: %s %x\n", combo_items[i].name, combo_items[i].val);
-						fCurrentTab->set_hp_key_code(combo_items[i].val);
+						fCurrentTab->buff->set_hp_key(flyff::key(combo_items[i].val, 100.f));
 					} break;
-				}*/
+				}
+				case IDC_EDIT_HP: {
+					
+					switch (HIWORD(wParam)) {
+						case EN_CHANGE: {
+							int hp_to_buf;
+
+							GetWindowTextA((HWND)lParam, txt_buf, sizeof(txt_buf) / sizeof(txt_buf[0]));
+							hp_to_buf = atoi(txt_buf);
+
+							// if really changed, then only change in class too
+							if (fCurrentTab->buff->get_hp_to_buff() != hp_to_buf) {
+								fCurrentTab->buff->set_hp_to_buff(hp_to_buf);
+
+								if (hp_to_buf > 0) {
+									if (fCurrentTab->buff->get_run() == false) {
+										fCurrentTab->buff->run(true);
+									}
+								} else {
+									fCurrentTab->buff->run(false);
+								}
+							} break;
+						}
+						case EN_KILLFOCUS: {
+							sprintf(txt_buf, "%d", fCurrentTab->buff->get_hp_to_buff());
+							SetWindowText((HWND)lParam, txt_buf);
+
+							break;
+						} break;
+					} break;
+				}
                 case ID_NOTI: {
                     unsigned char loc[12];
                     

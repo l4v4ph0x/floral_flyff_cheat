@@ -289,6 +289,14 @@ unsigned int floral_flyff::ci_localPlayer::get_money() {
     return money;
 }
 
+unsigned int floral_flyff::ci_localPlayer::get_hp() {
+	unsigned int hp = 0;
+
+	//if (OFFSET_HP != 0)
+	//	ZwReadVirtualMemory(handle, (void *)(get_me() + OFFSET_MONEY), &money, 4, 0);
+
+	return hp;
+}
 
 unsigned long floral_flyff::ci_localPlayer::get_me() {
     unsigned long value = 0;

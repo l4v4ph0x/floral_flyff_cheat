@@ -96,6 +96,7 @@ class floral_flyff: public flyff {
             // get
 			void get_name(char *name);
 			unsigned int get_money();
+			unsigned int get_hp();
 			unsigned long c_localPlayer::get_me();
 			unsigned long get_select();
 			void get_location(unsigned char *loc);
