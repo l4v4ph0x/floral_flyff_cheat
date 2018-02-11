@@ -38,6 +38,7 @@ class floral_flyff: public flyff {
         bool _use_perin_convert_spam;
         unsigned long _perin_convert_spam_write_addr;
         unsigned long _perin_convert_spam_ecx;
+        unsigned long _perin_convert_spam_call;
 
         unsigned long _init_hp_offset_addr;
 

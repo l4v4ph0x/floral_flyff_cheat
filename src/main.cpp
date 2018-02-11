@@ -169,7 +169,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                 printf("loading tab: %s\n", txt_buf);
                 
 				// disabling perin converter(need update, need to search hdd and get patterns)
-				EnableWindow(GetDlgItem(hDlg, IDC_CHECBKOX_PERIN_CONVERTER), false);
+				//EnableWindow(GetDlgItem(hDlg, IDC_CHECBKOX_PERIN_CONVERTER), false);
 
                 // set bot status hwnd
                 fCurrentTab->ui->set_hwnd_noti(GetDlgItem(hDlg, IDC_STATIC_BOT_STATUS));
@@ -484,16 +484,13 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                 }
 				case ID_CLOSE_TAB: {
 					close_tab(TabCtrl_GetCurFocus(hTabControl) -1);
-				}/*
+				}
 				case IDC_CHECBKOX_PERIN_CONVERTER: {
 					if (HIWORD(wParam) == BN_CLICKED) {
 						bool checked = SendMessage((HWND)lParam, BM_GETCHECK, 0, 0);
 						fCurrentTab->set_perin_convert_spam(checked);
-
-						if (fCurrentTab->run(false))
-							show_noti((char *)texts::noti_reenable_bot, 6000);
 					} break;
-				}*/
+				}
 				case IDC_EDIT_RESELECT_AFTER: {
 					switch (HIWORD(wParam)) {
 						case EN_CHANGE: {

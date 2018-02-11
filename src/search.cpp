@@ -11,7 +11,7 @@ unsigned long get_module(unsigned long pid, char *module_name, unsigned long *si
 	MODULEENTRY32 me32;
 	me32.dwSize = sizeof(MODULEENTRY32);
     
-    printf("go while\n");
+    printf("loop modules\n");
 	while (Module32Next(snapshot, &me32)) {
         printf("\tmodule: %s, %08X\n", me32.szModule, me32.modBaseAddr);
 		if (strcmp(me32.szModule, module_name) == 0) {

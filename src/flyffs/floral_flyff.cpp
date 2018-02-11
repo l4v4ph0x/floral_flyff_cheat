@@ -28,6 +28,7 @@ unsigned long __stdcall floral_flyff::_thread_select_target(void *t) {
     flyff::targetInfo ti;
     time_t time_selected;
     unsigned long bad_target;
+    char name[255];
 
     f = ((flyff *)t); // main class for every client
     killed = true;
@@ -53,7 +54,11 @@ unsigned long __stdcall floral_flyff::_thread_select_target(void *t) {
             // select target if any
             ti = f->bot->get_closest_target_in_view();
             if (ti.base != 0 && ti.base != bad_target) {
+                f->localPlayer->get_name(name);
+
+                printf("%s ", name);
                 printf("selecting closest target: %08X\n", ti.base);
+
                 f->localPlayer->select(ti.base);
 
                 // get time we select target
@@ -94,7 +99,9 @@ unsigned long __stdcall floral_flyff::_thread_select_target(void *t) {
                     // if we passed time we had to kill target then select 0
                     bad_target = f->localPlayer->get_select();
                     f->localPlayer->select(0);
+                    f->localPlayer->get_name(name);
 
+                    printf("%s ", name);
                     printf("couldn't killd in %d seconds, reselcting target\n", f->bot->get_reselect_after());
                 }
             }
@@ -106,15 +113,21 @@ unsigned long __stdcall floral_flyff::_thread_select_target(void *t) {
 
 unsigned long __stdcall _thread_perin_converter(void *t) {
     flyff *f;
+    char name[255];
 
     f = ((flyff *)t); // main class for every client
 
     for (;; Sleep(1000)) {
         // check does we need to convert to perin
         //if (f.get_perin_convert_spam()) { // no need to check since 9.2.2017
-        if (f->localPlayer->get_money() >= 100000000)
+        if (f->localPlayer->get_money() >= 100000000) {
+            f->localPlayer->get_name(name);
+
+            printf("%s ", name);
+            printf("converting perin\n");
+
             f->enable_perin_convert_spam(true);
-        else f->enable_perin_convert_spam(false);
+        } else f->enable_perin_convert_spam(false);
         //}
     }
 }
@@ -122,12 +135,17 @@ unsigned long __stdcall _thread_perin_converter(void *t) {
 unsigned long __stdcall floral_flyff::_thread_hper(void *t) {
     flyff *f;
     key k;
+    char name[255];
 
     f = ((flyff *)t); // main class for every client
 
     for (;; Sleep(100)) {
         if (f->localPlayer->get_hp() < f->buff->get_hp_to_buff()) {
+            f->localPlayer->get_name(name);
+
+            printf("%s ", name);
             printf("going to heal\n");
+
             if (f->buff->get_hp_key(&k)) {
                 // pressing f key to hper
                 f->buff->thread_uing = true;
@@ -288,9 +306,23 @@ void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long bas
 
             // updated 9.2.2017
             _perin_convert_spam_write_addr = base_addr + 0x249096; // old 0x249016(dif: +80)
-            // updated 9.2.2017
-            _perin_convert_spam_ecx = base_addr + 0x66B628; // old 0x66B608(dif: +20)
 
+            // updated 2.11.2018 50 81 EC F8 02 00 00
+            printf("Searching for _perin_convert_spam_call ... ");
+            addr = search(handle, base_addr, base_size, "\x50\x81\xEC\xF8\x02\x00\x00", 7, 1);
+            if (addr != 0) {
+                ZwReadVirtualMemory(handle, (void *)(addr + 0xAB), &_perin_convert_spam_call, 4, 0);
+                _perin_convert_spam_call += addr + 0xAA +5;
+                printf(" | Done %08X\n", _perin_convert_spam_call);
+            } else printf(" | Failed\n");
+
+            // updated 9.2.2017 base_addr + 0x66B628; // old 0x66B608(dif: +20)
+            // updated 2.11.2018
+            printf("Searching for _perin_convert_spam_ecx ... ");
+            if (addr != 0) {
+                ZwReadVirtualMemory(handle, (void *)(addr + 0xA6), &_perin_convert_spam_ecx, 4, 0);
+                printf(" | Done %08X\n", _perin_convert_spam_ecx);
+            } else printf(" | Failed\n");
 
             // some initializings
             init_range();
@@ -656,6 +688,21 @@ bool floral_flyff::get_perin_convert_spam() {
 
 // ------------------------------------------------- something to do
 void floral_flyff::enable_perin_convert_spam(bool state) {
+    unsigned long perin_convert_spam_call;
+
+    if (state == true) {
+        // 6A 00 01 16 16 B9 F0 2E 8D 01 E8 41 50 EA FF C3
+        LPVOID alloc = (LPVOID)VirtualAllocEx(_handle, NULL, 16, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+        ZwWriteVirtualMemory(_handle, (void *)(alloc), "\x68\x16\x16\x01\x00\xB9\xF0\x2E\x8D\x01\xE8\x41\x50\xEA\xFF\xC3", 16, 0, true);
+        ZwWriteVirtualMemory(_handle, (void *)((unsigned long)alloc + 6), &_perin_convert_spam_ecx, 4, 0, true);
+
+        perin_convert_spam_call =  _perin_convert_spam_call - ((unsigned long)alloc + 11) -4;
+
+        ZwWriteVirtualMemory(_handle, (void *)((unsigned long)alloc + 11), &perin_convert_spam_call, 4, 0, true);
+        HANDLE thread = CreateRemoteThread(_handle, NULL, 0, (LPTHREAD_START_ROUTINE)alloc, NULL, NULL, NULL);
+    }
+
+    /*
     unsigned char bytes[2];
 
     ZwReadVirtualMemory(_handle, (void *)(_perin_convert_spam_write_addr), &bytes, 2, 0);
@@ -666,4 +713,5 @@ void floral_flyff::enable_perin_convert_spam(bool state) {
     }
     else if (memcpy(bytes, "\xEB\x35", 2) != 0)
         ZwWriteVirtualMemory(_handle, (void *)(_perin_convert_spam_write_addr), "\xEB\x35", 2, 0, true);
+        */
 }
