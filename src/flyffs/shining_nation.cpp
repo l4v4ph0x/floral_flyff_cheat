@@ -112,7 +112,7 @@ unsigned long __stdcall shining_nation::_thread_hper(void *t) {
 
 	for (;; Sleep(100)) {
 		if (f->localPlayer->get_hp() < f->buff->get_hp_to_buff()) {
-			printf("goinf to heal\n");
+			printf("going to heal\n");
 			if (f->buff->get_hp_key(&k)) {
 				// pressing f key to hper
 				f->buff->thread_uing = true;
@@ -640,7 +640,7 @@ void shining_nation::ci_bot::stop() {
     SetWindowText((HWND)parent->ui->get_hwnd_noti(), (char *)texts::noti_bot_idle);
 }
 
-//////////////////// bot \\\\\\\\\\\\\\\\\\\\
+//////////////////// buff \\\\\\\\\\\\\\\\\\\\
 // ------------------------------------------------- gets
 
 bool shining_nation::ci_buff::get_run() {

@@ -102,10 +102,10 @@ void show_noti(char *txt, unsigned int miliseconds) {
     CreateThread(0, 0, _thread_hide_noti, 0, 0, 0);
 }
 
-flyff *get_flyff_by_pid(unsigned long pid) {
+flyff *get_flyff_by_pid(unsigned long pid, bool light_loading) {
     char txt_buf[256];
 
-    flyff *f = new floral_flyff(pid);
+    flyff *f = new floral_flyff(pid, light_loading);
 
     if (f->error_string == nullptr) {
         return f;
@@ -144,7 +144,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                 pids = get_procs("Neuz.exe");
 
 				for (i = 0; i < pids.size(); i++) {
-                    f = get_flyff_by_pid(pids[i]);
+                    f = get_flyff_by_pid(pids[i], true);
 
                     if (f != nullptr) {
                         f->localPlayer->get_name(txt_buf);
@@ -298,7 +298,7 @@ INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
                     
                     // adding new flyff class
                     for (i = 0; i < pids.size(); i++) {
-                        f = get_flyff_by_pid(pids[i]);
+                        f = get_flyff_by_pid(pids[i], false);
                         f->localPlayer->get_name(newbuf);
                         
                         if (strcmp(txt_buf, newbuf) == 0) {

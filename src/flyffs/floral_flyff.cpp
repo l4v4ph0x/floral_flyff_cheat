@@ -11,12 +11,13 @@
 
 const unsigned long floral_flyff::OFFSET_SELECT = 0x20;                    // type = 4 bytes
 const unsigned long floral_flyff::OFFSET_X = 0x188;                        // type = float
-const unsigned long floral_flyff::OFFSET_LVL = 0x79C + 8 + 0x10;           // type = 4 bytes
-const unsigned long floral_flyff::OFFSET_IS_DEAD = 0x900 + 8 + 0x10;       // 255 = alive, 6 = dead, type = 1 byte
-const unsigned long floral_flyff::OFFSET_TYPE_PET = 0x7EC + 8 + 0x10;      // type = 1 byte, 19 = pet, 0 = npc, 3 = aibatt
-const unsigned long floral_flyff::OFFSET_NAME = 0x1890 + 8 + 0x10;         // char array
+const unsigned long floral_flyff::OFFSET_LVL = 0x7D4;                      // type = 4 bytes
+const unsigned long floral_flyff::OFFSET_IS_DEAD = 0x938;                  // 255 = alive, 22 = dead, type = 1 byte
+const unsigned long floral_flyff::OFFSET_HP = 0x7F4;                       // type 4 bytes
+const unsigned long floral_flyff::OFFSET_TYPE_PET = 0x824;                 // type = 1 byte, 19 = pet, 0 = npc, 3 = aibatt
+const unsigned long floral_flyff::OFFSET_NAME = 0x1960;                    // char array
 const unsigned long floral_flyff::OFFSET_ID = 0x3F4;                       // 4 byte int
-const unsigned long floral_flyff::OFFSET_MONEY = 0x1884 + 8 + 0x10;        // 4 byte array int
+const unsigned long floral_flyff::OFFSET_MONEY = 0x1954;                   // 4 byte array int
 
 //////////////////// threads \\\\\\\\\\\\\\\\\\\\
 
@@ -118,6 +119,31 @@ unsigned long __stdcall _thread_perin_converter(void *t) {
     }
 }
 
+unsigned long __stdcall floral_flyff::_thread_hper(void *t) {
+    flyff *f;
+    key k;
+
+    f = ((flyff *)t); // main class for every client
+
+    for (;; Sleep(100)) {
+        if (f->localPlayer->get_hp() < f->buff->get_hp_to_buff()) {
+            printf("going to heal\n");
+            if (f->buff->get_hp_key(&k)) {
+                // pressing f key to hper
+                f->buff->thread_uing = true;
+                PostMessage((HWND)f->ui->get_hwnd(), WM_KEYDOWN, k.code, MapVirtualKey(k.code, MAPVK_VK_TO_VSC));
+                Sleep(50);
+                PostMessage((HWND)f->ui->get_hwnd(), WM_KEYUP, k.code, MapVirtualKey(k.code, MAPVK_VK_TO_VSC));
+                Sleep(50);
+                f->buff->thread_uing = false;
+
+                // sleeping 1 sec to take effect
+                Sleep(1000);
+            }
+        }
+    }
+}
+
 //////////////////// pricate functions \\\\\\\\\\\\\\\\\\\\
 
 float floral_flyff::get_hyp(flyff *f, flyff::targetInfo ti) {
@@ -136,11 +162,11 @@ float floral_flyff::get_hyp(flyff *f, flyff::targetInfo ti) {
 
 floral_flyff::floral_flyff(void) {}
 
-floral_flyff::floral_flyff(void *handle, unsigned long base_addr, unsigned long base_size) {
-    load(handle, base_addr, base_size);
+floral_flyff::floral_flyff(void *handle, unsigned long base_addr, unsigned long base_size, bool light_loading) {
+    load(handle, base_addr, base_size, light_loading);
 }
 
-floral_flyff::floral_flyff(unsigned long pid) {
+floral_flyff::floral_flyff(unsigned long pid, bool light_loading) {
     void *handle;
     unsigned long base, base_size;
 
@@ -158,12 +184,12 @@ floral_flyff::floral_flyff(unsigned long pid) {
         }
 
         error_string = nullptr;
-        load(handle, base, base_size);
+        load(handle, base, base_size, light_loading);
     }
     else error_string = (char *)texts::error_open_process;
 }
 
-void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long base_size) {
+void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long base_size, bool light_loading) {
     unsigned long addr;
     char buf[256];
 
@@ -175,72 +201,145 @@ void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long bas
         _base_addr = base_addr;
         _handle = handle;
 
-        // old 0x66EDE4 (dif: +20)
-        // updated 8.26.2017 0x66EE04 (dif: +2190)
-        // updated 10.2.2017
-        _select_addr = base_addr + 0x670F94;
-        // updated 8.26.2017 0x668D88 + 0x20 (dif: +2190)
-        // updated 10.2.2017
-        _maxInView_addr = base_addr + 0x66AF38;
-        // updated 8.26.2017 0x65E5F0 + 0x20 (dif: +2190)
-        // updated 10.2.2017
-        _targetBase_addr = base_addr + 0x6607A0;
+        // no need to load all values, (timetakin)
+        if (!light_loading) {
+            // old 0x66EDE4 (dif: +20)
+            // updated 8.26.2017 0x66EE04 (dif: +2190)
+            // updated 10.2.2017 base_addr + 0x670F94
+            // updated 2.11.2018 74 13 8B 55 C8
+            printf("Searching for _select_addr ... ");
+            addr = search(handle, base_addr, base_size, "\x74\x13\x8B\x55\xC8", 5, 1);
+            if (addr != 0) {
+                ZwReadVirtualMemory(handle, (void *)(addr + 0x7), &_select_addr, 4, 0);
+                printf(" | Done %08X\n", _select_addr);
+            } else printf(" | Failed\n");
+
+            // updated 8.26.2017 0x668D88 + 0x20 (dif: +2190)
+            // updated 10.2.2017 base_addr + 0x66AF38
+            // updated 2.11.2018 c0 ea 03 80 e2 01
+        
+            printf("Searching for _maxInView_addr, _targetBase_addr ... ");
+            addr = search(handle, base_addr, base_size, "\xC0\xEA\x03\x80\xE2\x01", 6, 1);
+            if (addr != 0) {
+                ZwReadVirtualMemory(handle, (void *)(addr - 0x47), &_maxInView_addr, 4, 0);
+                printf(" | Done %08X, ", _maxInView_addr);
+            } else printf(" | Failed\n");
+
+            // updated 8.26.2017 0x65E5F0 + 0x20 (dif: +2190)
+            // updated 10.2.2017 base_addr + 0x6607A0
+            // updated 2.11.2018
+            if (addr != 0) {
+                ZwReadVirtualMemory(handle, (void *)(addr - 0x34), &_targetBase_addr, 4, 0);
+                printf("%08X\n", _targetBase_addr);
+            }
+        }
+
         // updated 8.26.2017 0x659A48 + 0x20 (dif: +2194)
-        // updated 10.2.2017
-        _me_addr = base_addr + 0x65BBFC;
-        // old 0x66FDA0 (dif: -0x00980000)
-        // updated 8.27.2017 0x00FC7AFC - 0x00980000 (dif: -2050)
-        // updated 10.3.2017
-        _range_nr_addr = base_addr + 0x00FC7AFC - 0x00980000 - 0x2050;
-        // old 0x2A6161 (dif: +150)
-        // updated 8.26.2017 0x2A62B1 (dif: +A60)
-        // updated 10.3.2017
-        _range_addr = base_addr + 0x2A6D11;
-        // old 0x2A654A (dif: +150)
-        // updated 8.26.2017 0x2A654A + 0x150 (dif: +A60)
-        // updated 10.3.2017
-        _range_all_addr = base_addr + 0x2A654A + 0x150 + 0xA60;
+        // updated 10.2.2017 base_addr + 0x65BBFC
+        // updated 2.11.2018 6A 01 68 00 06 00 00 6A FF 6A 00
+        printf("Searching for _me_addr ... ");
+        addr = search(handle, base_addr, base_size, "\x6A\x01\x68\x00\x06\x00\x00\x6A\xFF\x6A\x00", 11, 1);
+        if (addr != 0) {
+            ZwReadVirtualMemory(handle, (void *)(addr - 0x15), &_me_addr, 4, 0);
+            printf(" | Done %08X\n", _me_addr);
+        } else printf(" | Failed\n");
 
-        // old 0x6400BC (dif: -0x00980000)
-        // update 8.27.2017 0xFC00BC - 0x00980000 (dif: -2050)
-        // updated 10.3.2017
-        _no_collision_addr = base_addr + 0x64210C;
+        // no need to load all values, (timetakin)
+        if (!light_loading) {
+            // old 0x66FDA0 (dif: -0x00980000)
+            // updated 8.27.2017 0x00FC7AFC - 0x00980000 (dif: -2050)
+            // updated 10.3.2017 base_addr + 0x00FC7AFC - 0x00980000 - 0x2050;
+            // updated 2.11.2018 just random addr from mem
+            _range_nr_addr = base_addr + 0x770C44;
 
-        // updated 9.2.2017
-        _perin_convert_spam_write_addr = base_addr + 0x249096; // old 0x249016(dif: +80)
-        // updated 9.2.2017
-        _perin_convert_spam_ecx = base_addr + 0x66B628; // old 0x66B608(dif: +20)
+            // old 0x2A6161 (dif: +150)
+            // updated 8.26.2017 0x2A62B1 (dif: +A60)
+            // updated 10.3.2017 base_addr + 0x2A6D11
+            // updated 2.11.2018 6A 00 6A 5A
+            printf("Searching for _range_addr ... ");
+            addr = search(handle, base_addr, base_size, "\x6A\x00\x6A\x5A", 4, 1);
+            if (addr != 0) {
+                _range_addr = addr - 0xAB;
+                printf(" | Done %08X\n", _range_addr);
+            } else printf(" | Failed\n");
 
-        // some initializings
-        init_range();
-        // need update
-        //init_perin_convert_spam();
+            // old 0x2A654A (dif: +150)
+            // updated 8.26.2017 0x2A654A + 0x150 (dif: +A60)
+            // updated 10.3.2017 base_addr + 0x2A654A + 0x150 + 0xA60
+            // updated 2.11.2018 83 7A 78 0B 75
+            printf("Searching for _range_all_addr ... ");
+            addr = search(handle, base_addr, base_size, "\x83\x7A\x78\x0B\x75", 5, 1);
+            if (addr != 0) {
+                _range_all_addr = addr + 0x4;
+                printf(" | Done %08X\n", _range_all_addr);
+            } else printf(" | Failed\n");
 
-        // { - waiting _select_addr to point
-        printf("waiting when _select_addr points ... ");
-        for (addr = 0; !addr; Sleep(20))
-            ZwReadVirtualMemory(_handle, (void *)(_select_addr), &addr, 4, 0);
-        printf("%08X | Done\n", addr + OFFSET_SELECT);
-        // end of waiting _select_add to point - }
+            // old 0x6400BC (dif: -0x00980000)
+            // update 8.27.2017 0xFC00BC - 0x00980000 (dif: -2050)
+            // updated 10.3.2017 base_addr + 0x64210C
+            // updated 2.11.2018 9F F6 C4 44 7B 19 6A 00
+            printf("Searching for _no_collision_addr ... ");
+            addr = search(handle, base_addr, base_size, "\x9F\xF6\xC4\x44\x7B\x19\x6A\x00", 8, 1);
+            if (addr != 0) {
+                ZwReadVirtualMemory(handle, (void *)(addr - 0x3C), &_no_collision_addr, 4, 0);
+                printf(" | Done %08X\n", _no_collision_addr);
+            } else printf(" | Failed\n");
 
-            // fillin virtual vars
-            localPlayer = new ci_localPlayer();
-            bot = new ci_bot();
 
-            // filling with few vars
-            localPlayer->parent = this;
-            localPlayer->handle = _handle;
-            localPlayer->select_addr = _select_addr;
-            localPlayer->me_addr = _me_addr;
-            localPlayer->no_collision_addr = _no_collision_addr;
-            localPlayer->range_nr_addr = _range_nr_addr;
+            // updated 9.2.2017
+            _perin_convert_spam_write_addr = base_addr + 0x249096; // old 0x249016(dif: +80)
+            // updated 9.2.2017
+            _perin_convert_spam_ecx = base_addr + 0x66B628; // old 0x66B608(dif: +20)
 
-            localPlayer->max_range = 99999999.f;
 
-            bot->parent = this;
-            bot->handle = _handle;
-            bot->maxInView_addr = _maxInView_addr;
-            bot->targetBase_addr = _targetBase_addr;
+            // some initializings
+            init_range();
+            // need update
+            //init_perin_convert_spam();
+        }
+
+        // updated 2.11.2018 50 6A 23
+        printf("Searching for _init_hp_offset_addr ... ");
+        addr = search(handle, base_addr, base_size, "\x50\x6A\x23", 3, 3);
+        if (addr != 0) {
+            _init_hp_offset_addr = addr - 0x45;
+            printf(" | Done %08X\n", _init_hp_offset_addr);
+        } else printf(" | Failed\n");
+
+        // some light initializings
+        init_hp_offset();
+
+        // no need to load all values, (timetakin)
+        if (!light_loading) {
+            // { - waiting _select_addr to point
+            printf("waiting when _select_addr points ... ");
+            for (addr = 0; !addr; Sleep(20))
+                ZwReadVirtualMemory(_handle, (void *)(_select_addr), &addr, 4, 0);
+            printf("%08X | Done\n", addr + OFFSET_SELECT);
+            // end of waiting _select_add to point - }
+        }
+
+        // fillin virtual vars
+        localPlayer = new ci_localPlayer();
+        bot = new ci_bot();
+        buff = new ci_buff();
+
+        // filling with few vars
+        localPlayer->parent = this;
+        localPlayer->handle = _handle;
+        localPlayer->select_addr = _select_addr;
+        localPlayer->me_addr = _me_addr;
+        localPlayer->no_collision_addr = _no_collision_addr;
+        localPlayer->range_nr_addr = _range_nr_addr;
+
+        localPlayer->max_range = 99999999.f;
+
+        bot->parent = this;
+        bot->handle = _handle;
+        bot->maxInView_addr = _maxInView_addr;
+        bot->targetBase_addr = _targetBase_addr;
+
+        buff->parent = this;
 
         // { - waiting _me_addr to point
         printf("waiting when _me_addr points ... ");
@@ -253,6 +352,7 @@ void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long bas
         printf("local money: %d\n", localPlayer->get_money());
         localPlayer->get_name(buf);
         printf("local name: %s\n", buf);
+        printf("local hp: %d\n", localPlayer->get_hp());
 
         // nulling some vars
         bot->h_select_thread = nullptr;
@@ -260,6 +360,7 @@ void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long bas
         bot->killed_count = 0;
         bot->set_reselect_after(0);
         memset(localPlayer->saved_pos, '\x00', 12);
+        
     } 
     // if we havent found flyff we give nothing
     else {
@@ -292,8 +393,8 @@ unsigned int floral_flyff::ci_localPlayer::get_money() {
 unsigned int floral_flyff::ci_localPlayer::get_hp() {
 	unsigned int hp = 0;
 
-	//if (OFFSET_HP != 0)
-	//	ZwReadVirtualMemory(handle, (void *)(get_me() + OFFSET_MONEY), &money, 4, 0);
+	if (OFFSET_HP != 0)
+		ZwReadVirtualMemory(handle, (void *)(get_me() + OFFSET_HP), &hp, 4, 0);
 
 	return hp;
 }
@@ -488,6 +589,27 @@ void floral_flyff::ci_bot::stop() {
     SetWindowText((HWND)parent->ui->get_hwnd_noti(), (char *)texts::noti_bot_idle);
 }
 
+//////////////////// buff \\\\\\\\\\\\\\\\\\\\
+// ------------------------------------------------- gets
+
+bool floral_flyff::ci_buff::get_run() {
+    if (h_hper_thread == nullptr) return false;
+    return true;
+}
+
+// ------------------------------------------------- something to do
+void floral_flyff::ci_buff::run(bool state) {
+    if (state == true) {
+        h_hper_thread = CreateThread(0, 0, _thread_hper, this->parent, 0, 0);
+    } else if (h_hper_thread != nullptr) {
+        // waiting for thread to finish all keypresses
+        for (Sleep(50); thread_uing; Sleep(50));
+        // terminating target selecting and killing thread and nulling vars
+        TerminateThread(h_hper_thread, 0);
+        h_hper_thread = nullptr;
+    }
+}
+
 
 // initializings
 void floral_flyff::init_range() {
@@ -496,7 +618,8 @@ void floral_flyff::init_range() {
 
     // force to use set range
     ZwWriteVirtualMemory(_handle, (void *)(_range_addr), (void *)"\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90", 12, 0, true);
-    ZwWriteVirtualMemory(_handle, (void *)(_range_addr + 12 + 2), &_range_nr_addr, 4, 0, true);
+    ZwWriteVirtualMemory(_handle, (void *)(_range_addr + 12 + 4), &_range_nr_addr, 4, 0, true);
+    ZwWriteVirtualMemory(_handle, (void *)(_range_addr + 0x8E), "\xEB\x1B", 2, 0, true);
 }
 
 void floral_flyff::init_perin_convert_spam() {
@@ -505,6 +628,11 @@ void floral_flyff::init_perin_convert_spam() {
         // updated 9.2.2017
         "\xEB\x35\x68\xC8\xCC\x00\x00\xB9\x08\xB6\x9A\x00\xE8\x29\x1A\x23\x00\xEB\x24\x90", 20, 0, true);
     ZwWriteVirtualMemory(_handle, (void *)(_perin_convert_spam_write_addr + 8), &_perin_convert_spam_ecx, 4, 0, true);
+}
+
+void floral_flyff::init_hp_offset() {
+    ZwWriteVirtualMemory(_handle, (void *)(_init_hp_offset_addr),
+        "\x8B\x4D\xFC\x89\x81\xF4\x07\x00\x00\x90\x90", 11, 0, true);
 }
 
 
