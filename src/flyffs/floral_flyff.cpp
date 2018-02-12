@@ -392,6 +392,7 @@ void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long bas
         bot->killed_count = 0;
         bot->set_reselect_after(0);
         memset(localPlayer->saved_pos, '\x00', 12);
+        _use_perin_convert_spam = false;
         
     } 
     // if we havent found flyff we give nothing
