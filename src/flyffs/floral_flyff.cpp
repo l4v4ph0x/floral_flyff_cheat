@@ -16,7 +16,7 @@ const unsigned long floral_flyff::OFFSET_IS_DEAD = 0x938;                  // 25
 const unsigned long floral_flyff::OFFSET_HP = 0x7F4;                       // type 4 bytes
 const unsigned long floral_flyff::OFFSET_TYPE_PET = 0x824;                 // type = 1 byte, 19 = pet, 0 = npc, 3 = aibatt
 const unsigned long floral_flyff::OFFSET_NAME = 0x1960;                    // char array
-const unsigned long floral_flyff::OFFSET_ID = 0x3F4;                       // 4 byte int
+const unsigned long floral_flyff::OFFSET_ID = 0x434;                       // 4 byte int
 const unsigned long floral_flyff::OFFSET_MONEY = 0x1954;                   // 4 byte array int
 
 //////////////////// threads \\\\\\\\\\\\\\\\\\\\
@@ -690,29 +690,20 @@ bool floral_flyff::get_perin_convert_spam() {
 // ------------------------------------------------- something to do
 void floral_flyff::enable_perin_convert_spam(bool state) {
     unsigned long perin_convert_spam_call;
+    unsigned long player_id;
 
     if (state == true) {
         // 6A 00 01 16 16 B9 F0 2E 8D 01 E8 41 50 EA FF C3
         LPVOID alloc = (LPVOID)VirtualAllocEx(_handle, NULL, 16, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-        ZwWriteVirtualMemory(_handle, (void *)(alloc), "\x68\x16\x16\x01\x00\xB9\xF0\x2E\x8D\x01\xE8\x41\x50\xEA\xFF\xC3", 16, 0, true);
+        ZwWriteVirtualMemory(_handle, (void *)(alloc), "\x68\x00\x00\x00\x00\xB9\xF0\x2E\x8D\x01\xE8\x41\x50\xEA\xFF\xC3", 16, 0, true);
         ZwWriteVirtualMemory(_handle, (void *)((unsigned long)alloc + 6), &_perin_convert_spam_ecx, 4, 0, true);
 
         perin_convert_spam_call =  _perin_convert_spam_call - ((unsigned long)alloc + 11) -4;
+        ZwReadVirtualMemory(_handle, (void *)(localPlayer->get_me() + OFFSET_ID), &player_id, 4, 0);
 
         ZwWriteVirtualMemory(_handle, (void *)((unsigned long)alloc + 11), &perin_convert_spam_call, 4, 0, true);
-        HANDLE thread = CreateRemoteThread(_handle, NULL, 0, (LPTHREAD_START_ROUTINE)alloc, NULL, NULL, NULL);
+        ZwWriteVirtualMemory(_handle, (void *)((unsigned long)alloc + 1), &player_id, 4, 0, true);
+
+        CreateRemoteThread(_handle, NULL, 0, (LPTHREAD_START_ROUTINE)alloc, NULL, NULL, NULL);
     }
-
-    /*
-    unsigned char bytes[2];
-
-    ZwReadVirtualMemory(_handle, (void *)(_perin_convert_spam_write_addr), &bytes, 2, 0);
-
-    if (state == true) {
-        if (memcpy(bytes, "\x90\x90", 2) != 0)
-            ZwWriteVirtualMemory(_handle, (void *)(_perin_convert_spam_write_addr), "\x90\x90", 2, 0, true);
-    }
-    else if (memcpy(bytes, "\xEB\x35", 2) != 0)
-        ZwWriteVirtualMemory(_handle, (void *)(_perin_convert_spam_write_addr), "\xEB\x35", 2, 0, true);
-        */
 }
