@@ -1,11 +1,11 @@
-#ifndef FLORAL_FLYFF_H
-#define FLORAL_FLYFF_H
+#ifndef FLYFF_EN_H
+#define FLYFF_EN_H
 
 #include "../a/flyff.h"
 
 #include <vector>
 
-class floral_flyff: public flyff {
+class flyff_en: public flyff {
 	private:
         // offsets >
         static const unsigned long OFFSET_SELECT;
@@ -46,18 +46,18 @@ class floral_flyff: public flyff {
         // < end of vars
 
         // threads
-        static unsigned long __stdcall floral_flyff::_thread_select_target(void *t);
-        static unsigned long __stdcall floral_flyff::_thread_hper(void *t);
-        static unsigned long __stdcall floral_flyff::_thread_perin_converter(void *t);
+        static unsigned long __stdcall flyff_en::_thread_select_target(void *t);
+        static unsigned long __stdcall flyff_en::_thread_hper(void *t);
+        static unsigned long __stdcall flyff_en::_thread_perin_converter(void *t);
 
         static float get_hyp(flyff *f, flyff::targetInfo ti);
         void load(void *handle, unsigned long base_addr, unsigned long base_size, bool light_loading);
 
 	public:
         // constructors
-		floral_flyff(void);
-        floral_flyff(unsigned long pid, bool light_loading);
-        floral_flyff(void *handle, unsigned long base_addr, unsigned long base_size, bool light_loading);
+        flyff_en(void);
+        flyff_en(unsigned long pid, bool light_loading);
+        flyff_en(void *handle, unsigned long base_addr, unsigned long base_size, bool light_loading);
         
 		// filling nested struct virtuals
 		class ci_localPlayer: public c_localPlayer {

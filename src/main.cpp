@@ -7,6 +7,7 @@
 
 #include "flyffs/floral_flyff.h"
 #include "flyffs/shining_nation.h"
+#include "flyffs/flyff_en.h"
 
 #include "h/losu.h"
 #include "h/summoner.h"
@@ -118,8 +119,19 @@ flyff *get_flyff_by_pid(unsigned long pid, bool light_loading) {
 
         if (f->error_string == nullptr) {
             return f;
+        } else {
+            printf("error: %s\n\n", f->error_string);
+            // delete class cause we open it again when selected
+            free(f);
+
+            f = new flyff_en(pid, light_loading);
+
+            if (f->error_string == nullptr) {
+                return f;
+            } else {
+                printf("error: %s\n\n", f->error_string);
+            }
         }
-        else printf("error: %s\n\n", f->error_string);
     }
 
     return nullptr;

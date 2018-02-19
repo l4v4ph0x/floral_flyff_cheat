@@ -146,6 +146,7 @@
   <ItemGroup>
     <ClInclude Include="..\src\a\flyff.h" />
     <ClInclude Include="..\src\flyffs\floral_flyff.h" />
+    <ClInclude Include="..\src\flyffs\flyff_en.h" />
     <ClInclude Include="..\src\flyffs\shining_nation.h" />
     <ClInclude Include="..\src\h\flyff.h" />
     <ClInclude Include="..\src\h\gToolTip.h" />
@@ -160,6 +161,7 @@
   <ItemGroup>
     <ClCompile Include="..\src\flyff.cpp" />
     <ClCompile Include="..\src\flyffs\floral_flyff.cpp" />
+    <ClCompile Include="..\src\flyffs\flyff_en.cpp" />
     <ClCompile Include="..\src\flyffs\shining_nation.cpp" />
     <ClCompile Include="..\src\gToolTip.cpp" />
     <ClCompile Include="..\src\low_functions.cpp" />

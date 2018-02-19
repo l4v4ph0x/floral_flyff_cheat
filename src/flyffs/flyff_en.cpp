@@ -1,4 +1,4 @@
-#include "floral_flyff.h"
+#include "flyff_en.h"
 #include "../h/losu.h"
 #include "../h/summoner.h"
 #include "../h/texts.h"
@@ -9,19 +9,19 @@
 #include <cmath>
 #include <ctime>
 
-const unsigned long floral_flyff::OFFSET_SELECT = 0x20;                    // type = 4 bytes
-const unsigned long floral_flyff::OFFSET_X = 0x188;                        // type = float
-const unsigned long floral_flyff::OFFSET_LVL = 0x7D4;                      // type = 4 bytes
-const unsigned long floral_flyff::OFFSET_IS_DEAD = 0x938;                  // 255 = alive, 22 = dead, type = 1 byte
-const unsigned long floral_flyff::OFFSET_HP = 0x7F4;                       // type 4 bytes
-const unsigned long floral_flyff::OFFSET_TYPE_PET = 0x824;                 // type = 1 byte, 19 = pet, 0 = npc, 3 = aibatt
-const unsigned long floral_flyff::OFFSET_NAME = 0x1960;                    // char array
-const unsigned long floral_flyff::OFFSET_ID = 0x434;                       // 4 byte int
-const unsigned long floral_flyff::OFFSET_MONEY = 0x1954;                   // 4 byte array int
+const unsigned long flyff_en::OFFSET_SELECT = 0x20;                    // type = 4 bytes
+const unsigned long flyff_en::OFFSET_X = 0x188;                        // type = float
+const unsigned long flyff_en::OFFSET_LVL = 0x7D4;                      // type = 4 bytes
+const unsigned long flyff_en::OFFSET_IS_DEAD = 0x938;                  // 255 = alive, 22 = dead, type = 1 byte
+const unsigned long flyff_en::OFFSET_HP = 0x7F4;                       // type 4 bytes
+const unsigned long flyff_en::OFFSET_TYPE_PET = 0x824;                 // type = 1 byte, 19 = pet, 0 = npc, 3 = aibatt
+const unsigned long flyff_en::OFFSET_NAME = 0x1960;                    // char array
+const unsigned long flyff_en::OFFSET_ID = 0x434;                       // 4 byte int
+const unsigned long flyff_en::OFFSET_MONEY = 0x1954;                   // 4 byte array int
 
 //////////////////// threads \\\\\\\\\\\\\\\\\\\\
 
-unsigned long __stdcall floral_flyff::_thread_select_target(void *t) {
+unsigned long __stdcall flyff_en::_thread_select_target(void *t) {
     bool killed;
     flyff *f;
     flyff::key k;
@@ -111,7 +111,7 @@ unsigned long __stdcall floral_flyff::_thread_select_target(void *t) {
     return 0;
 }
 
-unsigned long __stdcall floral_flyff::_thread_perin_converter(void *t) {
+unsigned long __stdcall flyff_en::_thread_perin_converter(void *t) {
     flyff *f;
     char name[255];
 
@@ -132,7 +132,7 @@ unsigned long __stdcall floral_flyff::_thread_perin_converter(void *t) {
     }
 }
 
-unsigned long __stdcall floral_flyff::_thread_hper(void *t) {
+unsigned long __stdcall flyff_en::_thread_hper(void *t) {
     flyff *f;
     key k;
     char name[255];
@@ -164,7 +164,7 @@ unsigned long __stdcall floral_flyff::_thread_hper(void *t) {
 
 //////////////////// pricate functions \\\\\\\\\\\\\\\\\\\\
 
-float floral_flyff::get_hyp(flyff *f, flyff::targetInfo ti) {
+float flyff_en::get_hyp(flyff *f, flyff::targetInfo ti) {
     float x = 0,
         z = 0;
 
@@ -178,17 +178,17 @@ float floral_flyff::get_hyp(flyff *f, flyff::targetInfo ti) {
 
 //////////////////// class contructors \\\\\\\\\\\\\\\\\\\\
 
-floral_flyff::floral_flyff(void) {}
+flyff_en::flyff_en(void) {}
 
-floral_flyff::floral_flyff(void *handle, unsigned long base_addr, unsigned long base_size, bool light_loading) {
+flyff_en::flyff_en(void *handle, unsigned long base_addr, unsigned long base_size, bool light_loading) {
     load(handle, base_addr, base_size, light_loading);
 }
 
-floral_flyff::floral_flyff(unsigned long pid, bool light_loading) {
+flyff_en::flyff_en(unsigned long pid, bool light_loading) {
     void *handle;
     unsigned long base, base_size;
 
-    printf("Floral Flyff --- opening proces\n");
+    printf("FlyFF EN --- opening proces\n");
     handle = VZwOpenProcess(pid);
 
     if (handle) {
@@ -207,13 +207,13 @@ floral_flyff::floral_flyff(unsigned long pid, bool light_loading) {
     else error_string = (char *)texts::error_open_process;
 }
 
-void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long base_size, bool light_loading) {
+void flyff_en::load(void *handle, unsigned long base_addr, unsigned long base_size, bool light_loading) {
     unsigned long addr;
     char buf[256];
 
-    printf("Searcing for Floral Flyff ... ");
+    printf("Searcing for FlyFF EN ... ");
 
-    if (search(handle, base_addr, base_size, "Floral Flyff", 12, 1) != 0) {
+    if (search(handle, base_addr, base_size, "FlyFF_EN", 12, 1) != 0) {
         printf(" | Done\n");
 
         _base_addr = base_addr;
@@ -407,14 +407,14 @@ void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long bas
 
 //////////////////// localPlayer \\\\\\\\\\\\\\\\\\\\
 // ------------------------------------------------- gets
-void floral_flyff::ci_localPlayer::get_name(char *name) {
+void flyff_en::ci_localPlayer::get_name(char *name) {
     memcpy(&*name, "Floral Flyff: can't get name", 29);
 
 	if (OFFSET_NAME != 0)
 		ZwReadVirtualMemory(handle, (void *)(get_me() + OFFSET_NAME), &*name + 14, 255 -14, 0);
 }
 
-unsigned int floral_flyff::ci_localPlayer::get_money() {
+unsigned int flyff_en::ci_localPlayer::get_money() {
     unsigned int money = 0;
 
     if (OFFSET_MONEY != 0)
@@ -423,7 +423,7 @@ unsigned int floral_flyff::ci_localPlayer::get_money() {
     return money;
 }
 
-unsigned int floral_flyff::ci_localPlayer::get_hp() {
+unsigned int flyff_en::ci_localPlayer::get_hp() {
 	unsigned int hp = 0;
 
 	if (OFFSET_HP != 0)
@@ -432,13 +432,13 @@ unsigned int floral_flyff::ci_localPlayer::get_hp() {
 	return hp;
 }
 
-unsigned long floral_flyff::ci_localPlayer::get_me() {
+unsigned long flyff_en::ci_localPlayer::get_me() {
     unsigned long value = 0;
     ZwReadVirtualMemory(handle, (void *)(me_addr), &value, 4, 0);
     return value;
 }
 
-unsigned long floral_flyff::ci_localPlayer::get_select() {
+unsigned long flyff_en::ci_localPlayer::get_select() {
     unsigned long pointed = 0;
 
     if (OFFSET_SELECT != 0) {
@@ -449,11 +449,11 @@ unsigned long floral_flyff::ci_localPlayer::get_select() {
     return pointed;
 }
 
-void floral_flyff::ci_localPlayer::get_location(unsigned char *loc) {
+void flyff_en::ci_localPlayer::get_location(unsigned char *loc) {
      memcpy(loc, saved_pos, 12);
 }
 
-bool floral_flyff::ci_localPlayer::get_no_collision() {
+bool flyff_en::ci_localPlayer::get_no_collision() {
     bool collision;
     ZwReadVirtualMemory(handle, (void *)(no_collision_addr), &collision, 1, 0);
     return !collision;
@@ -461,7 +461,7 @@ bool floral_flyff::ci_localPlayer::get_no_collision() {
 
 
 // ------------------------------------------------- sets
-void floral_flyff::ci_localPlayer::save_location(unsigned char *loc) {
+void flyff_en::ci_localPlayer::save_location(unsigned char *loc) {
     // if loc is null then getting local player pos, else given loc
     if (loc == nullptr)
         if (OFFSET_X != 0)
@@ -471,14 +471,14 @@ void floral_flyff::ci_localPlayer::save_location(unsigned char *loc) {
         *(float *)(saved_pos + 4) += 2.f;
 }
 
-void floral_flyff::ci_localPlayer::set_no_collision(bool state) {
+void flyff_en::ci_localPlayer::set_no_collision(bool state) {
     if (state == true)
         ZwWriteVirtualMemory(handle, (void *)(no_collision_addr), "\x00", 1, 0, true);
     else
         ZwWriteVirtualMemory(handle, (void *)(no_collision_addr), "\x01", 1, 0, true);
 }
 
-float floral_flyff::ci_localPlayer::set_range(float f) {
+float flyff_en::ci_localPlayer::set_range(float f) {
     // set range number
     ZwWriteVirtualMemory(handle, (void *)(range_nr_addr), &f, 4, 0);
 
@@ -487,12 +487,12 @@ float floral_flyff::ci_localPlayer::set_range(float f) {
 }
 
 // ------------------------------------------------- something to do
-void floral_flyff::ci_localPlayer::teleport_to_saved_pos() {
+void flyff_en::ci_localPlayer::teleport_to_saved_pos() {
     if (OFFSET_X != 0)
         ZwWriteVirtualMemory(handle, (void *)(get_me() + OFFSET_X), &saved_pos, 12, 0);
 }
 
-void floral_flyff::ci_localPlayer::teleport_to_target(targetInfo target) {
+void flyff_en::ci_localPlayer::teleport_to_target(targetInfo target) {
     unsigned char pos[12];
 
     if (OFFSET_X != 0) {
@@ -502,7 +502,7 @@ void floral_flyff::ci_localPlayer::teleport_to_target(targetInfo target) {
     }
 }
 
-void floral_flyff::ci_localPlayer::select(unsigned long target) {
+void flyff_en::ci_localPlayer::select(unsigned long target) {
     unsigned long pointed = 0;
 
     if (OFFSET_SELECT != 0) {
@@ -511,7 +511,7 @@ void floral_flyff::ci_localPlayer::select(unsigned long target) {
     }
 }
 
-void floral_flyff::ci_localPlayer::attack() {
+void flyff_en::ci_localPlayer::attack() {
     key k;
     
     if (parent->bot->get_key(&k)) {
@@ -524,7 +524,7 @@ void floral_flyff::ci_localPlayer::attack() {
 
 //////////////////// bot \\\\\\\\\\\\\\\\\\\\
 // ------------------------------------------------- gets
-flyff::targetInfo floral_flyff::ci_bot::get_closest_target_in_view() {
+flyff::targetInfo flyff_en::ci_bot::get_closest_target_in_view() {
     unsigned long maxInView;
     unsigned long target;
     unsigned long type;
@@ -576,7 +576,7 @@ flyff::targetInfo floral_flyff::ci_bot::get_closest_target_in_view() {
     return closest_ti;
 }
 
-bool floral_flyff::ci_bot::get_key(key *k) {
+bool flyff_en::ci_bot::get_key(key *k) {
     if (keys.size() > 0) {
         *k = keys[0];
         return true;
@@ -586,7 +586,7 @@ bool floral_flyff::ci_bot::get_key(key *k) {
 
 
 // ------------------------------------------------- sets
-void floral_flyff::ci_bot::add_update_attack_key(key k, bool remove) {
+void flyff_en::ci_bot::add_update_attack_key(key k, bool remove) {
     if (remove) {
         for (int i = 0; i < keys.size(); i++) {
             if (keys[i].code == k.code && keys[i].priority == k.priority) {
@@ -598,7 +598,7 @@ void floral_flyff::ci_bot::add_update_attack_key(key k, bool remove) {
 }
 
 // ------------------------------------------------- something to do
-bool floral_flyff::ci_bot::run() {
+bool flyff_en::ci_bot::run() {
     // save new position when bot enables
     parent->localPlayer->save_location();
     // resets vars
@@ -612,7 +612,7 @@ bool floral_flyff::ci_bot::run() {
     return get_run();
 }
 
-void floral_flyff::ci_bot::stop() {
+void flyff_en::ci_bot::stop() {
     // waiting for thread to finish all keypresses
     for (Sleep(50); thread_uing; Sleep(50));
     // terminating target selecting and killing thread and nulling vars
@@ -625,13 +625,13 @@ void floral_flyff::ci_bot::stop() {
 //////////////////// buff \\\\\\\\\\\\\\\\\\\\
 // ------------------------------------------------- gets
 
-bool floral_flyff::ci_buff::get_run() {
+bool flyff_en::ci_buff::get_run() {
     if (h_hper_thread == nullptr) return false;
     return true;
 }
 
 // ------------------------------------------------- something to do
-void floral_flyff::ci_buff::run(bool state) {
+void flyff_en::ci_buff::run(bool state) {
     if (state == true) {
         h_hper_thread = CreateThread(0, 0, _thread_hper, this->parent, 0, 0);
     } else if (h_hper_thread != nullptr) {
@@ -645,7 +645,7 @@ void floral_flyff::ci_buff::run(bool state) {
 
 
 // initializings
-void floral_flyff::init_range() {
+void flyff_en::init_range() {
     // enabling range for everyone
     ZwWriteVirtualMemory(_handle, (void *)(_range_all_addr), (void *)"\x90\x90", 2, 0, true);
 
@@ -655,7 +655,7 @@ void floral_flyff::init_range() {
     ZwWriteVirtualMemory(_handle, (void *)(_range_addr + 0x8E), "\xEB\x1B", 2, 0, true);
 }
 
-void floral_flyff::init_perin_convert_spam() {
+void flyff_en::init_perin_convert_spam() {
     ZwWriteVirtualMemory(_handle, (void *)(_perin_convert_spam_write_addr),
         // old "\xEB\x35\x68\xC8\xCC\x00\x00\xB9\x08\xB6\x9A\x00\xE8\x59\x19\x23\x00\xEB\x24\x90", 20, 0, true);
         // updated 9.2.2017
@@ -663,7 +663,7 @@ void floral_flyff::init_perin_convert_spam() {
     ZwWriteVirtualMemory(_handle, (void *)(_perin_convert_spam_write_addr + 8), &_perin_convert_spam_ecx, 4, 0, true);
 }
 
-void floral_flyff::init_hp_offset() {
+void flyff_en::init_hp_offset() {
     ZwWriteVirtualMemory(_handle, (void *)(_init_hp_offset_addr),
         "\x8B\x4D\xFC\x89\x81\xF4\x07\x00\x00\x90\x90", 11, 0, true);
 }
@@ -671,7 +671,7 @@ void floral_flyff::init_hp_offset() {
 
 //////////////////// miscs \\\\\\\\\\\\\\\\\\\\
 // ------------------------------------------------- sets
-void floral_flyff::set_perin_convert_spam(bool state) {
+void flyff_en::set_perin_convert_spam(bool state) {
     _use_perin_convert_spam = state;
 
     if (state)
@@ -683,12 +683,12 @@ void floral_flyff::set_perin_convert_spam(bool state) {
 }
 
 // ------------------------------------------------- gets
-bool floral_flyff::get_perin_convert_spam() {
+bool flyff_en::get_perin_convert_spam() {
     return _use_perin_convert_spam;
 }
 
 // ------------------------------------------------- something to do
-void floral_flyff::enable_perin_convert_spam(bool state) {
+void flyff_en::enable_perin_convert_spam(bool state) {
     unsigned long perin_convert_spam_call;
     unsigned long player_id;
 

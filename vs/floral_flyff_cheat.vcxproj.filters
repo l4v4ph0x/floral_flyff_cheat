@@ -51,6 +51,9 @@
     <ClInclude Include="..\src\flyffs\shining_nation.h">
       <Filter>flyffs</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\flyffs\flyff_en.h">
+      <Filter>flyffs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\flyff.cpp" />
@@ -63,6 +66,9 @@
       <Filter>flyffs</Filter>
     </ClCompile>
     <ClCompile Include="..\src\flyffs\shining_nation.cpp">
+      <Filter>flyffs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\flyffs\flyff_en.cpp">
       <Filter>flyffs</Filter>
     </ClCompile>
   </ItemGroup>
