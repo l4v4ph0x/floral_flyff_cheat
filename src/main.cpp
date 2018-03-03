@@ -3,6 +3,15 @@
 #include <commctrl.h>
 #include <vector>
 
+#include <nana/gui.hpp>
+#include <nana/gui/widgets/panel.hpp>
+#include <nana/gui/widgets/tabbar.hpp>
+#include <nana/gui/widgets/label.hpp>
+#include <nana/gui/widgets/button.hpp>
+#include <nana/gui/widgets/combox.hpp>
+#include <nana/gui/widgets/listbox.hpp>
+
+
 #include "a/flyff.h"
 
 #include "flyffs/floral_flyff.h"
@@ -30,6 +39,43 @@ HWND hCurrentTab; // tab dialog handle
 int tabCount;
 flyff *fCurrentTab;
 
+
+
+flyff *get_flyff_by_pid(unsigned long pid, bool light_loading) {
+    char txt_buf[256];
+
+    flyff *f = new floral_flyff(pid, light_loading);
+
+    if (f->error_string == nullptr) {
+        return f;
+    } else {
+        printf("error: %s\n\n", f->error_string);
+        // delete class cause we open it again when selected
+        free(f);
+
+        f = new shining_nation(pid);
+
+        if (f->error_string == nullptr) {
+            return f;
+        } else {
+            printf("error: %s\n\n", f->error_string);
+            // delete class cause we open it again when selected
+            free(f);
+
+            f = new flyff_en(pid, light_loading);
+
+            if (f->error_string == nullptr) {
+                return f;
+            } else {
+                printf("error: %s\n\n", f->error_string);
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+/*
 INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 void add_tab(char *title, unsigned int tab, LPARAM lParam = 0) {
@@ -101,40 +147,6 @@ void show_noti(char *txt, unsigned int miliseconds) {
     SetWindowText(hwnd, txt);
     ShowWindow(hwnd, SW_SHOW);
     CreateThread(0, 0, _thread_hide_noti, 0, 0, 0);
-}
-
-flyff *get_flyff_by_pid(unsigned long pid, bool light_loading) {
-    char txt_buf[256];
-
-    flyff *f = new floral_flyff(pid, light_loading);
-
-    if (f->error_string == nullptr) {
-        return f;
-    } else {
-        printf("error: %s\n\n", f->error_string);
-        // delete class cause we open it again when selected
-        free(f);
-
-        f = new shining_nation(pid);
-
-        if (f->error_string == nullptr) {
-            return f;
-        } else {
-            printf("error: %s\n\n", f->error_string);
-            // delete class cause we open it again when selected
-            free(f);
-
-            f = new flyff_en(pid, light_loading);
-
-            if (f->error_string == nullptr) {
-                return f;
-            } else {
-                printf("error: %s\n\n", f->error_string);
-            }
-        }
-    }
-
-    return nullptr;
 }
 
 INT_PTR CALLBACK TabDialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -638,12 +650,6 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 		}
         case WM_COMMAND: {
             switch (LOWORD(wParam)) {
-                /*
-
-
-
-
-                */
             }
 
             break;
@@ -660,6 +666,147 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     
     return false;
 }
+*/
+
+
+nana::tabbar<int> *tab;
+
+class tab_flyff {
+    public:
+        bool drawn;
+
+    private:
+        nana::listbox   *list_menu;
+        nana::form      *fm;
+
+        flyff           *f;
+
+    public:
+        tab_flyff(nana::form *fm, flyff *f) {
+            this->fm = fm;
+            this->f = f;
+
+            // delcare ui items
+            list_menu = new nana::listbox(*fm, true);
+
+            tab->append(f->localPlayer->get_name(), nullptr, tab->length());
+
+            drawn = false;
+        }
+
+        void show() {
+            fm->div("vert <weight=24 fit tab><<listbox><>>");
+
+            if (!drawn) {
+                (*fm)["listbox"] << *list_menu;
+
+                drawn = true;
+            }
+
+            fm->collocate();
+        }
+};
+
+std::vector<tab_flyff *> flyff_tabs;
+
+class tab_main {
+    public:
+        bool drawn;
+
+    private:
+        nana::label     *label_select_player;
+        nana::combox    *combo_players;
+        nana::button    *btn_hook;
+        nana::form      *fm;
+
+        char *selected_char;
+        std::vector<unsigned long> pids;
+        int i;
+        flyff *f;
+
+    public:
+        tab_main(nana::form *fm) {
+            this->fm = fm;
+
+            // delcare ui items
+            label_select_player = new nana::label(*fm, "Select player to hook cheat");
+            combo_players = new nana::combox(*fm, true);
+            btn_hook = new nana::button(*fm, "Hook");
+
+            tab->append("Select flyff", nullptr, tab->length());
+
+            // events
+            btn_hook->events().click([fm, this] {
+                hook();
+            });
+
+            drawn = false;
+        }
+
+        void hook() {
+            printf("hook to player: %s ... \n", combo_players->text(0));
+
+            pids = get_procs("Neuz.exe");
+
+            for (i = 0; i < pids.size(); i++) {
+                f = get_flyff_by_pid(pids[i], true);
+
+                if (strcmp(combo_players->text(0).c_str(), f->localPlayer->get_name()) == 0) {
+                    // set default target levels range
+                    f->bot->set_target_lvls(1, 400);
+                    // set flyff window handle
+                    f->ui->set_hwnd((void *)find_main_window(pids[i]));
+
+                    // free to create with fully loaded class
+                    free(f);
+
+                    // create flyff tab class with flyff class
+                    tab_flyff *tb = new tab_flyff(fm, get_flyff_by_pid(pids[i], false));
+                    tb->show();
+                    
+                    flyff_tabs.push_back(tb);
+
+                    break;
+                }
+
+                free(f);
+            }
+        }
+
+        void show() {
+            // load flyffs
+            pids = get_procs("Neuz.exe");
+
+            for (i = 0; i < pids.size(); i++) {
+                f = get_flyff_by_pid(pids[i], true);
+
+                if (f != nullptr) {
+                    combo_players->push_back(f->localPlayer->get_name());
+
+                    if (strcmp(combo_players->text(0).c_str(), "") == 0) {
+                        // TODO select first one
+                    }
+                }
+
+                // delete class cause we open it again when selected
+                free(f);
+            }
+
+            fm->div("vert <weight=24 tab><><weight=21 margin=[0,10,0,10] <fit margin=[0,10,0,0] text><margin=[0,10,0,0] combox><weight=75 button>><>");
+
+            if (!drawn) {
+                (*fm)["text"] << *label_select_player;
+                (*fm)["combox"] << *combo_players;
+                (*fm)["button"] << *btn_hook;
+
+                drawn = true;
+            }
+
+            fm->collocate();
+        }
+};
+
+tab_main *tm;
 
 int main() {
     void *handle;
@@ -681,7 +828,7 @@ int main() {
     hthis = GetConsoleWindow();
     HIthis = (HINSTANCE)GetWindowLong(hthis, -6);
     
-    // create window
+    /* // create window
     hDlg = CreateDialogParam(HIthis, MAKEINTRESOURCE(IDD_DIALOG_MAIN), 0, DialogProc, 0);
     ShowWindow(hDlg, SW_SHOW);
     
@@ -695,6 +842,36 @@ int main() {
             DispatchMessage(&msg); // send it to dialog procedure
         }
     }
+    */
+
+    nana::form *fm = new nana::form(nana::API::make_center(700, 300), nana::appear::decorate<>());
+    fm->caption("flyff cheats by lava");
+
+    // define root ui items
+    tab = new nana::tabbar<int>(*fm, true);
+
+    fm->div("vert <weight=24 tab><>");
+    (*fm)["tab"] << *tab;
+
+    fm->collocate();
+    fm->show();
+
+    // load selecting flyff tab
+    tm = new tab_main(fm);
+    tm->show();
+
+    tab->events().activated([fm] (const nana::arg_tabbar<int>& arg) {
+        std::string str = tab->text(arg.value);
+        printf("selected tab: %d %s\n", arg.value, str.c_str());
+
+        if (arg.value == 0) {
+            if (tm->drawn) tm->show();
+        } else {
+            if (flyff_tabs[arg.value -1]->drawn) flyff_tabs[arg.value -1]->show();
+        }
+    });
+
+    nana::exec();
 
     // easier to debug errors on windows
     //system("pause");

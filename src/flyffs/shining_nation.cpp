@@ -364,8 +364,7 @@ void shining_nation::load(void *handle, unsigned long base_addr, unsigned long b
 
         // printing some local vars
         printf("local money: %d\n", localPlayer->get_money());
-        localPlayer->get_name(buf);
-        printf("local name: %s\n", buf);
+        printf("local name: %s\n", localPlayer->get_name());
 
 		// need implementation
 		//init_perin_convert_spam();
@@ -394,12 +393,15 @@ void shining_nation::load(void *handle, unsigned long base_addr, unsigned long b
 
 //////////////////// localPlayer \\\\\\\\\\\\\\\\\\\\
 // ------------------------------------------------- gets
-void shining_nation::ci_localPlayer::get_name(char *name) {
+char *shining_nation::ci_localPlayer::get_name() {
+    char name[255];
     memcpy(&*name, "Shining Nation: can't get name", 31);
 
     // ruskii is in cyrillic and its unicode, this code is in multibyte
     //if (OFFSET_NAME != 0)
     //    ZwReadVirtualMemory(handle, (void *)(get_me() + OFFSET_NAME), &*name, 255, 0);
+
+    return name;
 }
 
 unsigned int shining_nation::ci_localPlayer::get_money() {

@@ -62,7 +62,7 @@ class flyff_en: public flyff {
 		// filling nested struct virtuals
 		class ci_localPlayer: public c_localPlayer {
             // get
-			void get_name(char *name);
+            char *get_name();
 			unsigned int get_money();
 			unsigned int get_hp();
 			unsigned long c_localPlayer::get_me();

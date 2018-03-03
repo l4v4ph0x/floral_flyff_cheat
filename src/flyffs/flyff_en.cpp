@@ -28,7 +28,6 @@ unsigned long __stdcall flyff_en::_thread_select_target(void *t) {
     flyff::targetInfo ti;
     time_t time_selected;
     unsigned long bad_target;
-    char name[255];
 
     f = ((flyff *)t); // main class for every client
     killed = true;
@@ -54,9 +53,7 @@ unsigned long __stdcall flyff_en::_thread_select_target(void *t) {
             // select target if any
             ti = f->bot->get_closest_target_in_view();
             if (ti.base != 0 && ti.base != bad_target) {
-                f->localPlayer->get_name(name);
-
-                printf("%s ", name);
+                printf("%s ", f->localPlayer->get_name());
                 printf("selecting closest target: %08X\n", ti.base);
 
                 f->localPlayer->select(ti.base);
@@ -99,9 +96,7 @@ unsigned long __stdcall flyff_en::_thread_select_target(void *t) {
                     // if we passed time we had to kill target then select 0
                     bad_target = f->localPlayer->get_select();
                     f->localPlayer->select(0);
-                    f->localPlayer->get_name(name);
-
-                    printf("%s ", name);
+                    printf("%s ", f->localPlayer->get_name());
                     printf("couldn't killd in %d seconds, reselcting target\n", f->bot->get_reselect_after());
                 }
             }
@@ -113,7 +108,6 @@ unsigned long __stdcall flyff_en::_thread_select_target(void *t) {
 
 unsigned long __stdcall flyff_en::_thread_perin_converter(void *t) {
     flyff *f;
-    char name[255];
 
     f = ((flyff *)t); // main class for every client
 
@@ -121,9 +115,7 @@ unsigned long __stdcall flyff_en::_thread_perin_converter(void *t) {
         // check does we need to convert to perin
         //if (f.get_perin_convert_spam()) { // no need to check since 9.2.2017
         if (f->localPlayer->get_money() >= 100000000) {
-            f->localPlayer->get_name(name);
-
-            printf("%s ", name);
+            printf("%s ", f->localPlayer->get_name());
             printf("converting perin\n");
 
             f->enable_perin_convert_spam(true);
@@ -135,15 +127,12 @@ unsigned long __stdcall flyff_en::_thread_perin_converter(void *t) {
 unsigned long __stdcall flyff_en::_thread_hper(void *t) {
     flyff *f;
     key k;
-    char name[255];
 
     f = ((flyff *)t); // main class for every client
 
     for (;; Sleep(100)) {
         if (f->localPlayer->get_hp() < f->buff->get_hp_to_buff()) {
-            f->localPlayer->get_name(name);
-
-            printf("%s ", name);
+            printf("%s ", f->localPlayer->get_name());
             printf("going to heal\n");
 
             if (f->buff->get_hp_key(&k)) {
@@ -382,8 +371,7 @@ void flyff_en::load(void *handle, unsigned long base_addr, unsigned long base_si
 
         // printing some local vars
         printf("local money: %d\n", localPlayer->get_money());
-        localPlayer->get_name(buf);
-        printf("local name: %s\n", buf);
+        printf("local name: %s\n",  localPlayer->get_name());
         printf("local hp: %d\n", localPlayer->get_hp());
 
         // nulling some vars
@@ -407,11 +395,14 @@ void flyff_en::load(void *handle, unsigned long base_addr, unsigned long base_si
 
 //////////////////// localPlayer \\\\\\\\\\\\\\\\\\\\
 // ------------------------------------------------- gets
-void flyff_en::ci_localPlayer::get_name(char *name) {
+char *flyff_en::ci_localPlayer::get_name() {
+    char name[255];
     memcpy(&*name, "Floral Flyff: can't get name", 29);
 
 	if (OFFSET_NAME != 0)
 		ZwReadVirtualMemory(handle, (void *)(get_me() + OFFSET_NAME), &*name + 14, 255 -14, 0);
+
+    return name;
 }
 
 unsigned int flyff_en::ci_localPlayer::get_money() {

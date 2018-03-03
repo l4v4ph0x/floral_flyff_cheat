@@ -28,7 +28,6 @@ unsigned long __stdcall floral_flyff::_thread_select_target(void *t) {
     flyff::targetInfo ti;
     time_t time_selected;
     unsigned long bad_target;
-    char name[255];
 
     f = ((flyff *)t); // main class for every client
     killed = true;
@@ -54,9 +53,7 @@ unsigned long __stdcall floral_flyff::_thread_select_target(void *t) {
             // select target if any
             ti = f->bot->get_closest_target_in_view();
             if (ti.base != 0 && ti.base != bad_target) {
-                f->localPlayer->get_name(name);
-
-                printf("%s ", name);
+                printf("%s ", f->localPlayer->get_name());
                 printf("selecting closest target: %08X\n", ti.base);
 
                 f->localPlayer->select(ti.base);
@@ -99,9 +96,8 @@ unsigned long __stdcall floral_flyff::_thread_select_target(void *t) {
                     // if we passed time we had to kill target then select 0
                     bad_target = f->localPlayer->get_select();
                     f->localPlayer->select(0);
-                    f->localPlayer->get_name(name);
 
-                    printf("%s ", name);
+                    printf("%s ", f->localPlayer->get_name());
                     printf("couldn't killd in %d seconds, reselcting target\n", f->bot->get_reselect_after());
                 }
             }
@@ -113,7 +109,6 @@ unsigned long __stdcall floral_flyff::_thread_select_target(void *t) {
 
 unsigned long __stdcall floral_flyff::_thread_perin_converter(void *t) {
     flyff *f;
-    char name[255];
 
     f = ((flyff *)t); // main class for every client
 
@@ -121,9 +116,7 @@ unsigned long __stdcall floral_flyff::_thread_perin_converter(void *t) {
         // check does we need to convert to perin
         //if (f.get_perin_convert_spam()) { // no need to check since 9.2.2017
         if (f->localPlayer->get_money() >= 100000000) {
-            f->localPlayer->get_name(name);
-
-            printf("%s ", name);
+            printf("%s ", f->localPlayer->get_name());
             printf("converting perin\n");
 
             f->enable_perin_convert_spam(true);
@@ -135,15 +128,12 @@ unsigned long __stdcall floral_flyff::_thread_perin_converter(void *t) {
 unsigned long __stdcall floral_flyff::_thread_hper(void *t) {
     flyff *f;
     key k;
-    char name[255];
 
     f = ((flyff *)t); // main class for every client
 
     for (;; Sleep(100)) {
         if (f->localPlayer->get_hp() < f->buff->get_hp_to_buff()) {
-            f->localPlayer->get_name(name);
-
-            printf("%s ", name);
+            printf("%s ", f->localPlayer->get_name());
             printf("going to heal\n");
 
             if (f->buff->get_hp_key(&k)) {
@@ -210,6 +200,7 @@ floral_flyff::floral_flyff(unsigned long pid, bool light_loading) {
 void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long base_size, bool light_loading) {
     unsigned long addr;
     char buf[256];
+    int i;
 
     printf("Searcing for Floral Flyff ... ");
 
@@ -345,9 +336,19 @@ void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long bas
         if (!light_loading) {
             // { - waiting _select_addr to point
             printf("waiting when _select_addr points ... ");
-            for (addr = 0; !addr; Sleep(20))
+            for (i = 0, addr = 0; !addr && i < 10; Sleep(20), i++)
                 ZwReadVirtualMemory(_handle, (void *)(_select_addr), &addr, 4, 0);
-            printf("%08X | Done\n", addr + OFFSET_SELECT);
+
+            // check if we havent passed time limit for getting pointer
+            if (i < 10) {
+                printf("%08X | Done\n", addr + OFFSET_SELECT);
+            } else {
+                printf(" | Failed\n");
+                error_string = (char *)texts::error_char_not_loaded;
+
+                // close function
+                return;
+            }
             // end of waiting _select_add to point - }
         }
 
@@ -375,15 +376,24 @@ void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long bas
 
         // { - waiting _me_addr to point
         printf("waiting when _me_addr points ... ");
-        for (addr = 0; !addr; Sleep(20))
+        for (i = 0, addr = 0; !addr && i < 10; Sleep(20), i++)
             addr = localPlayer->get_me();
-        printf("%08X | Done\n", addr);
+
+        // check if we havent passed time limit for getting pointer
+        if (i < 10) {
+            printf("%08X | Done\n", addr);
+        } else {
+            printf(" | Failed\n");
+            error_string = (char *)texts::error_char_not_loaded;
+
+            // close function
+            return;
+        }
         // end of waiting _me_addr to point - }
 
         // printing some local vars
         printf("local money: %d\n", localPlayer->get_money());
-        localPlayer->get_name(buf);
-        printf("local name: %s\n", buf);
+        printf("local name: %s\n", localPlayer->get_name());
         printf("local hp: %d\n", localPlayer->get_hp());
 
         // nulling some vars
@@ -407,11 +417,14 @@ void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long bas
 
 //////////////////// localPlayer \\\\\\\\\\\\\\\\\\\\
 // ------------------------------------------------- gets
-void floral_flyff::ci_localPlayer::get_name(char *name) {
+char *floral_flyff::ci_localPlayer::get_name() {
+    if (name == nullptr) name = (char *)malloc(255);
     memcpy(&*name, "Floral Flyff: can't get name", 29);
 
 	if (OFFSET_NAME != 0)
 		ZwReadVirtualMemory(handle, (void *)(get_me() + OFFSET_NAME), &*name + 14, 255 -14, 0);
+
+    return name;
 }
 
 unsigned int floral_flyff::ci_localPlayer::get_money() {

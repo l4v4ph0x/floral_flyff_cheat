@@ -56,7 +56,7 @@ class flyff {
             // < end of vars it uses
 
             // get
-			virtual void get_name(char *name) = 0;
+			virtual char *get_name() = 0;
 			virtual unsigned int get_money() = 0;
 			virtual unsigned int get_hp() = 0;
 			virtual unsigned long get_me() = 0;

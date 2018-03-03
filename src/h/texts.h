@@ -6,6 +6,7 @@ class texts {
         static const char *error_open_process;
         static const char *error_wrong_flyff;
         static const char *error_flyff_not_found;
+        static const char *error_char_not_loaded;
 
         static const char *noti_reenable_bot;
         
