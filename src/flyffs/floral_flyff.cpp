@@ -308,11 +308,12 @@ void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long bas
             _perin_convert_spam_write_addr = base_addr + 0x249096; // old 0x249016(dif: +80)
 
             // updated 2.11.2018 50 81 EC F8 02 00 00
+            // updated 2.11.2018 50 81 EC 68 03 00 00
             printf("Searching for _perin_convert_spam_call ... ");
-            addr = search(handle, base_addr, base_size, "\x50\x81\xEC\xF8\x02\x00\x00", 7, 1);
+            addr = search(handle, base_addr, base_size, "\x50\x81\xEC\x68\x03\x00\x00", 7, 1);
             if (addr != 0) {
-                ZwReadVirtualMemory(handle, (void *)(addr + 0xAB), &_perin_convert_spam_call, 4, 0);
-                _perin_convert_spam_call += addr + 0xAA +5;
+                ZwReadVirtualMemory(handle, (void *)(addr + 0xC0), &_perin_convert_spam_call, 4, 0);
+                _perin_convert_spam_call += addr + 0xC0 +4;
                 printf(" | Done %08X\n", _perin_convert_spam_call);
             } else printf(" | Failed\n");
 
@@ -320,7 +321,7 @@ void floral_flyff::load(void *handle, unsigned long base_addr, unsigned long bas
             // updated 2.11.2018
             printf("Searching for _perin_convert_spam_ecx ... ");
             if (addr != 0) {
-                ZwReadVirtualMemory(handle, (void *)(addr + 0xA6), &_perin_convert_spam_ecx, 4, 0);
+                ZwReadVirtualMemory(handle, (void *)(addr + 0xBB), &_perin_convert_spam_ecx, 4, 0);
                 printf(" | Done %08X\n", _perin_convert_spam_ecx);
             } else printf(" | Failed\n");
 
